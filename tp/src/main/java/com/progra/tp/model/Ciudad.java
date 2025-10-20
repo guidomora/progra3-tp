@@ -16,9 +16,9 @@ public class Ciudad {
     @Id
     @GeneratedValue
     private Long id;
+
     private String nombre;
-    
-    @Relationship(type="CONECTADA_CON")
+    @Relationship(type="CONECTADA_CON", direction=Relationship.Direction.OUTGOING)
     private List<Ruta> rutas = new ArrayList<>();
 
     public Ciudad (String nombre, List<Ruta> rutas){
@@ -26,4 +26,7 @@ public class Ciudad {
         this.nombre=nombre;
         this.rutas=rutas;
     }
+
+    public Ciudad() {}
+
 }
