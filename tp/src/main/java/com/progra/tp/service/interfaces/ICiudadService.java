@@ -11,4 +11,10 @@ public interface ICiudadService {
     List<Ciudad> getAllCiudades();
 
     Ciudad getCiudadByNombre(String nombre);
+
+    Ciudad getCiudadById(Long id);
+
+    Ciudad actualizarCiudad(Long id, Ciudad ciudadDetails);
+    boolean eliminarCiudad(Long id);
+
 }
