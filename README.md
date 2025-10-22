@@ -28,7 +28,7 @@ docker run \
   --name neo4j-local \
   -p 7474:7474 -p 7687:7687 \
   -d \
-  -e NEO4J_AUTH=neo4j/ContrasenaSegura \
+  -e NEO4J_AUTH=neo4j/<TuContrasenaSegura> \
   neo4j:latest
 ```
 
@@ -37,7 +37,7 @@ Luego, crear un archivo .env en la raiz del proyecto con las siguientes propieda
 ```bash
 NEO4J_URI=bolt://localhost:7687
 NEO4J_USERNAME=neo4j
-NEO4J_PASSWORD=ContrasenaSegura
+NEO4J_PASSWORD=<TuContrasenaSegura>
 ```
 
 Archivo application.properties:
