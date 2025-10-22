@@ -6,6 +6,9 @@ import org.springframework.stereotype.Service;
 
 import com.progra.tp.model.Ciudad;
 import com.progra.tp.model.Ruta;
+import com.progra.tp.model.dtos.CiudadResponseDTO;
+import com.progra.tp.model.dtos.RutaDTO;
+import com.progra.tp.model.dtos.RutaResponseDTO;
 import com.progra.tp.repository.CiudadRepository;
 import com.progra.tp.service.interfaces.IRutaService;
 
@@ -18,26 +21,30 @@ public class RutaService implements IRutaService {
         this.ciudadRepository = ciudadRepository;
     }
 
+    
     @Override
-    public Ciudad agregarRuta(Long ciudadId, Ruta ruta) {
-        Ciudad ciudad = ciudadRepository.findById(ciudadId)
+    public CiudadResponseDTO agregarRuta(Long ciudadId, RutaDTO rutaDTO) {
+        Ciudad ciudadOrigen = ciudadRepository.findById(ciudadId)
                 .orElseThrow(() -> new IllegalArgumentException("Ciudad origen no encontrada"));
 
-        Ciudad destinoCompleto = ciudadRepository.findById(ruta.getDestino().getId())
+        Ciudad ciudadDestino = ciudadRepository.findById(rutaDTO.getDestinoId())
                 .orElseThrow(() -> new IllegalArgumentException("Ciudad destino no encontrada"));
 
-        ruta.setDestino(destinoCompleto);  // asignar el nodo completo
-        ciudad.getRutas().add(ruta);
+        Ruta ruta = new Ruta(ciudadDestino, rutaDTO.getDistancia());
+        ciudadOrigen.getRutas().add(ruta);
 
-        // Guardar solo la ciudad origen para evitar StackOverflow
-        return ciudadRepository.save(ciudad);
+        Ciudad guardada = ciudadRepository.save(ciudadOrigen);
+        return guardada.toDTO();
     }
 
     @Override
-    public List<Ruta> obtenerRutasDeCiudad(Long ciudadId) {
+    public List<RutaResponseDTO> obtenerRutasDeCiudad(Long ciudadId) {
         Ciudad ciudad = ciudadRepository.findById(ciudadId)
                 .orElseThrow(() -> new IllegalArgumentException("Ciudad no encontrada"));
-        return ciudad.getRutas();
+
+        return ciudad.getRutas().stream()
+                .map(r -> new RutaResponseDTO(r.getId(), r.getDestino().getId(), r.getDestino().getNombre(), r.getDistancia()))
+                .toList();
     }
 
     @Override

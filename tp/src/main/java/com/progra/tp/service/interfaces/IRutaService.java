@@ -3,10 +3,13 @@ import java.util.List;
 
 import com.progra.tp.model.Ciudad;
 import com.progra.tp.model.Ruta;
+import com.progra.tp.model.dtos.CiudadResponseDTO;
+import com.progra.tp.model.dtos.RutaDTO;
+import com.progra.tp.model.dtos.RutaResponseDTO;
 public interface IRutaService {
 
-    Ciudad agregarRuta(Long ciudadId, Ruta ruta);
-    List<Ruta> obtenerRutasDeCiudad(Long ciudadId);
+    CiudadResponseDTO agregarRuta(Long ciudadId, RutaDTO ruta);
+    List<RutaResponseDTO> obtenerRutasDeCiudad(Long ciudadId);
     Ciudad actualizarRuta(Long ciudadId, int rutaIndex, Ruta rutaActualizada);
     Ciudad eliminarRutaPorId(Long ciudadId, Long rutaIndex);
 }
