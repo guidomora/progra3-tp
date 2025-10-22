@@ -10,6 +10,8 @@ import com.progra.tp.repository.AgenteRepository;
 import com.progra.tp.service.interfaces.IAgenteService;
 import com.progra.tp.service.interfaces.ICiudadService;
 
+import jakarta.transaction.Transactional;
+
 @Service
 public class AgenteService implements IAgenteService{
     private final AgenteRepository agenteRepository;
@@ -28,14 +30,23 @@ public class AgenteService implements IAgenteService{
     }
 
     @Override
+    @Transactional
     public Agente crearAgente(Agente agente) {
-        // TODO Auto-generated method stub
-        Ciudad ciudad = ciudadService.getCiudadByNombre(agente.getUbicacionActual().getNombre());
-        if (ciudad == null) {
+        Ciudad ciudad = null;
+
+        if (agente.getUbicacionActual() != null && agente.getUbicacionActual().getId() != null) {
+            ciudad = ciudadService.getCiudadById(agente.getUbicacionActual().getId());
+        }
+
+        if (ciudad == null && agente.getUbicacionActual() != null && agente.getUbicacionActual().getNombre() != null) {
+            ciudad = ciudadService.getCiudadByNombre(agente.getUbicacionActual().getNombre());
+        }
+
+        if (ciudad == null && agente.getUbicacionActual() != null) {
             ciudad = ciudadService.crearCiudad(agente.getUbicacionActual());
         }
+
         agente.setUbicacionActual(ciudad);
-        
         return agenteRepository.save(agente);
     }
     
