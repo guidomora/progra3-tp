@@ -8,6 +8,8 @@ import org.springframework.data.neo4j.core.schema.GeneratedValue;
 import org.springframework.data.neo4j.core.schema.Node;
 import org.springframework.data.neo4j.core.schema.Relationship;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import lombok.Data;
 
 @Data
@@ -19,6 +21,8 @@ public class Ciudad {
 
     private String nombre;
     @Relationship(type="CONECTADA_CON", direction=Relationship.Direction.OUTGOING)
+    @JsonIgnoreProperties("rutas")
+
     private List<Ruta> rutas = new ArrayList<>();
 
     public Ciudad (String nombre, List<Ruta> rutas){
