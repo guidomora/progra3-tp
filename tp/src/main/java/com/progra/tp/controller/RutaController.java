@@ -14,6 +14,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.progra.tp.model.Ciudad;
 import com.progra.tp.model.Ruta;
+import com.progra.tp.model.dtos.CiudadResponseDTO;
+import com.progra.tp.model.dtos.RutaDTO;
+import com.progra.tp.model.dtos.RutaResponseDTO;
 import com.progra.tp.service.interfaces.IRutaService;
 
 @RestController
@@ -25,19 +28,19 @@ public class RutaController {
     private IRutaService rutaService;
 
     @GetMapping
-    public ResponseEntity<List<Ruta>> obtenerRutas(@PathVariable Long ciudadId) {
+    public ResponseEntity<List<RutaResponseDTO>> obtenerRutas(@PathVariable Long ciudadId) {
         try {
-            List<Ruta> rutas = rutaService.obtenerRutasDeCiudad(ciudadId);
+            List<RutaResponseDTO> rutas = rutaService.obtenerRutasDeCiudad(ciudadId);
             return ResponseEntity.ok(rutas);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.notFound().build();
         }
     }
 
-    @PostMapping()
-    public ResponseEntity<Ciudad> agregarRuta(@PathVariable Long ciudadId, @RequestBody Ruta ruta) {
+    @PostMapping("/agregar")
+    public ResponseEntity<CiudadResponseDTO> agregarRuta(@PathVariable Long ciudadId, @RequestBody RutaDTO rutaDTO) {
         try {
-            Ciudad ciudad = rutaService.agregarRuta(ciudadId, ruta);
+            CiudadResponseDTO ciudad = rutaService.agregarRuta(ciudadId, rutaDTO);
             return ResponseEntity.ok(ciudad);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
