@@ -1,4 +1,5 @@
 package com.progra.tp.controller;
+
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,12 +11,14 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.progra.tp.model.Ciudad;
 import com.progra.tp.model.Ruta;
 import com.progra.tp.model.dtos.CiudadResponseDTO;
 import com.progra.tp.model.dtos.RutaDTO;
+import com.progra.tp.model.dtos.RutaOptimaResponseDTO;
 import com.progra.tp.model.dtos.RutaResponseDTO;
 import com.progra.tp.service.interfaces.IRutaService;
 
@@ -46,9 +49,21 @@ public class RutaController {
             return ResponseEntity.badRequest().build();
         }
     }
-     
+
+    @GetMapping("/optima/{destinoId}")
+    public ResponseEntity<RutaOptimaResponseDTO> obtenerRutaMasCorta(@PathVariable Long ciudadId,
+            @PathVariable Long destinoId) {
+        try {
+            RutaOptimaResponseDTO respuesta = rutaService.calcularRutaMasCorta(ciudadId, destinoId);
+            return ResponseEntity.ok(respuesta);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
     @PutMapping("/{rutaIndex}")
-    public ResponseEntity<Ciudad> actualizarRuta(@PathVariable Long ciudadId, @PathVariable int rutaIndex, @RequestBody Ruta ruta) {
+    public ResponseEntity<Ciudad> actualizarRuta(@PathVariable Long ciudadId, @PathVariable int rutaIndex,
+            @RequestBody Ruta ruta) {
         try {
             Ciudad ciudad = rutaService.actualizarRuta(ciudadId, rutaIndex, ruta);
             return ResponseEntity.ok(ciudad);

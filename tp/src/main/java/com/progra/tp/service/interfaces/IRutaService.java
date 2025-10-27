@@ -5,6 +5,7 @@ import com.progra.tp.model.Ciudad;
 import com.progra.tp.model.Ruta;
 import com.progra.tp.model.dtos.CiudadResponseDTO;
 import com.progra.tp.model.dtos.RutaDTO;
+import com.progra.tp.model.dtos.RutaOptimaResponseDTO;
 import com.progra.tp.model.dtos.RutaResponseDTO;
 public interface IRutaService {
 
@@ -12,4 +13,5 @@ public interface IRutaService {
     List<RutaResponseDTO> obtenerRutasDeCiudad(Long ciudadId);
     Ciudad actualizarRuta(Long ciudadId, int rutaIndex, Ruta rutaActualizada);
     Ciudad eliminarRutaPorId(Long ciudadId, Long rutaIndex);
+    RutaOptimaResponseDTO calcularRutaMasCorta(Long ciudadOrigenId, Long ciudadDestinoId);
 }
