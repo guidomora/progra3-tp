@@ -12,38 +12,47 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.progra.tp.model.dtos.CiudadResponseDTO;
 import com.progra.tp.model.dtos.RutaResponseDTO;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
+@Getter
+@Setter
 @Node
-@JsonIgnoreProperties({"rutas"}) //  evita expansión circular en respuestas
-
+@JsonIgnoreProperties({"rutas"})
 public class Ciudad {
-    @Id
-    @GeneratedValue
+    @Id @GeneratedValue
     private Long id;
 
     private String nombre;
 
     @Relationship(type="CONECTADA_CON", direction=Relationship.Direction.OUTGOING)
-    @JsonIgnoreProperties({"destino"}) //  evita recorrer recursivamente las rutas
-
+    @JsonIgnoreProperties({"destino"})
     private List<Ruta> rutas = new ArrayList<>();
 
-    public Ciudad (String nombre, List<Ruta> rutas){
-        
-        this.nombre=nombre;
-        this.rutas=rutas;
+    public Ciudad() {}
+    public Ciudad(String nombre, List<Ruta> rutas){
+        this.nombre = nombre;
+        this.rutas = rutas;
     }
 
-    public Ciudad() {}
-// 🔹 Método auxiliar: convertir a DTO sin causar recursión
+    // hashCode y equals basados solo en ID
+    @Override
+    public int hashCode() {
+        return id != null ? id.hashCode() : 0;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (!(obj instanceof Ciudad)) return false;
+        Ciudad other = (Ciudad) obj;
+        return id != null && id.equals(other.getId());
+    }
+
     public CiudadResponseDTO toDTO() {
         List<RutaResponseDTO> rutasDTO = new ArrayList<>();
         if (rutas != null) {
-            for (Ruta r : rutas) {
-                rutasDTO.add(r.toDTO());
-            }
+            for (Ruta r : rutas) rutasDTO.add(r.toDTO());
         }
         return new CiudadResponseDTO(id, nombre, rutasDTO);
     }
