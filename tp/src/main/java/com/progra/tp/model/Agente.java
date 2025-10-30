@@ -33,4 +33,6 @@ public class Agente {
         this.energiaDisponible=energiaDisponible;
         this.tareasAsignadas=tareasAsignadas;
     }
+
+    public Agente() {}
 }
