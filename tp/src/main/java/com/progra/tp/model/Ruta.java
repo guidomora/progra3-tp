@@ -8,29 +8,41 @@ import org.springframework.data.neo4j.core.schema.TargetNode;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.progra.tp.model.dtos.RutaResponseDTO;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
+@Getter
+@Setter
 @RelationshipProperties
 public class Ruta {
-    @Id
-    @GeneratedValue
+    @Id @GeneratedValue
     private Long id;
 
     @TargetNode
-    @JsonIgnoreProperties({"rutas"})  // 🔥 evita recursión al serializar
+    @JsonIgnoreProperties({"rutas"})
     private Ciudad destino;
 
-    private double distancia; //(peso)
+    private double distancia;
 
-    public Ruta (Ciudad destino, double distancia){
-        this.destino=destino;
-        this.distancia=distancia;
+    public Ruta() {}
+    public Ruta(Ciudad destino, double distancia) {
+        this.destino = destino;
+        this.distancia = distancia;
     }
 
-    public Ruta(){}
+    @Override
+    public int hashCode() {
+        return id != null ? id.hashCode() : 0;
+    }
 
-    // 🔹 Método auxiliar: convertir a DTO sin causar recursión
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (!(obj instanceof Ruta)) return false;
+        Ruta other = (Ruta) obj;
+        return id != null && id.equals(other.getId());
+    }
+
     public RutaResponseDTO toDTO() {
         return new RutaResponseDTO(
             id,
@@ -39,5 +51,4 @@ public class Ruta {
             distancia
         );
     }
-
 }
