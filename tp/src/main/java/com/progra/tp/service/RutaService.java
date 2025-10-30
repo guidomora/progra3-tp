@@ -38,9 +38,15 @@ public class RutaService implements IRutaService {
         Ciudad ciudadDestino = ciudadRepository.findById(rutaDTO.getDestinoId())
                 .orElseThrow(() -> new IllegalArgumentException("Ciudad destino no encontrada"));
 
-        Ruta ruta = new Ruta(ciudadDestino, rutaDTO.getDistancia());
+        // creao relacion sin añadir toda la ciudadDestino a la lista de rutas para evitar recursion
+        Ruta ruta = new Ruta();
+        ruta.setDestino(ciudadDestino);
+        ruta.setDistancia(rutaDTO.getDistancia());
+
+        // guarda la relación usando un metodo de la ciudad
         ciudadOrigen.getRutas().add(ruta);
 
+        // guarda solo la ciudadOrigen
         Ciudad guardada = ciudadRepository.save(ciudadOrigen);
         return guardada.toDTO();
     }
