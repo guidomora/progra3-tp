@@ -1,6 +1,7 @@
 package com.progra.tp.service;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -15,6 +16,8 @@ import com.progra.tp.model.Ciudad;
 import com.progra.tp.model.Ruta;
 import com.progra.tp.model.dtos.CiudadResponseDTO;
 import com.progra.tp.model.dtos.CiudadRutaDTO;
+import com.progra.tp.model.dtos.MSTAristaDTO;
+import com.progra.tp.model.dtos.MSTResponseDTO;
 import com.progra.tp.model.dtos.RutaDTO;
 import com.progra.tp.model.dtos.RutaOptimaResponseDTO;
 import com.progra.tp.model.dtos.RutaResponseDTO;
@@ -96,7 +99,7 @@ public class RutaService implements IRutaService {
     @Override
     public RutaOptimaResponseDTO calcularRutaMasCorta(Long ciudadOrigenId, Long ciudadDestinoId) {
         Map<Long, Ciudad> grafo = cargarCiudadesComoMapa();
-
+        
         Ciudad origen = obtenerCiudad(grafo, ciudadOrigenId);
         Ciudad destino = obtenerCiudad(grafo, ciudadDestinoId);
 
@@ -201,5 +204,109 @@ public class RutaService implements IRutaService {
     }
 
     private record NodoDistancia(Long ciudadId, double distancia) {
+    }
+
+    @Override
+    public MSTResponseDTO calcularMSTPrim(Long ciudadInicialId) {
+        // TODO Auto-generated method stub
+        List<Ciudad> ciudades = ciudadRepository.findAll();
+        if (ciudades.isEmpty()) {
+            throw new IllegalArgumentException("No hay ciudades registradas para calcular el MST.");
+        }   
+        
+        // Convertir las ciudades y sus rutas en un grafo
+        int numeroCiudades = ciudades.size();
+        Map<Long, Integer> indice = new HashMap<>();
+        for (int i = 0; i < numeroCiudades; i++) {
+            indice.put(ciudades.get(i).getId(), i);
+        }
+        Integer indiceInicial = indice.get(ciudadInicialId); //busco si existe el id de la ciudad ingresada
+        if (indiceInicial == null) {
+            throw new IllegalArgumentException("Ciudad inicial no encontrada en la lista de ciudades.");
+        }
+        List<List<int[]>> grafo = new ArrayList<>(); //grafo como lista de adyacencia
+        for (int i = 0; i < numeroCiudades; i++) {
+            grafo.add(new ArrayList<>());
+        }
+
+        for (Ciudad c : ciudades) {
+            int u = indice.get(c.getId());
+            for (Ruta r : c.getRutas()) {
+                int v = indice.get(r.getDestino().getId());
+                grafo.get(u).add(new int[]{v, (int) r.getDistancia()});
+            }
+        }
+        List<MSTAristaDTO> aristas = calcular(ciudades, grafo, indiceInicial);
+        // Calcular distancia total
+        double distanciaTotal = aristas.stream()
+                                    .mapToDouble(MSTAristaDTO::getDistancia)
+                                    .sum();
+
+        return new MSTResponseDTO(aristas, distanciaTotal);
+
+    }
+
+    private List<MSTAristaDTO> calcular(List<Ciudad> ciudades, List<List<int[]>> grafo, int indiceInicial) {
+        // inicializaciones
+        int infinito = Integer.MAX_VALUE;
+        int n = ciudades.size();
+        int [] pesoMinimo = new int[n];
+        int [] padre = new int [n];
+        boolean [] incluidoEnMST = new boolean[n];
+
+        Arrays.fill(pesoMinimo, infinito);
+        pesoMinimo[indiceInicial] = 0;
+        padre[indiceInicial] = -1;
+
+        for (int i=0; i<n;i++){
+            int u = verticeConPesoMinimo(n, pesoMinimo, incluidoEnMST);
+            if (u == -1) break; // No quedan vértices accesibles
+            
+            incluidoEnMST[u] = true;
+            for (int[] vecino : grafo.get(u)) {
+                int v = vecino[0];
+                int peso = vecino[1];
+
+                // Si el vértice no está en MST y el peso es menor que el actual, actualizamos
+                if (!incluidoEnMST[v] && peso < pesoMinimo[v]) {
+                    pesoMinimo[v] = peso;
+                    padre[v] = u;
+                }
+            }
+        }
+
+        List<MSTAristaDTO> aristas = new ArrayList<>();
+        for (int v = 0; v < n; v++) {
+            if (v == indiceInicial) continue;
+            if (padre[v] == -1) {
+                throw new IllegalArgumentException(
+                    "No se puede formar un MST completo: la ciudad '" + ciudades.get(v).getNombre() + "' no es alcanzable desde la ciudad inicial."
+                );
+            }
+
+            Ciudad origen = ciudades.get(padre[v]);
+            Ciudad destino = ciudades.get(v);
+            aristas.add(new MSTAristaDTO(
+                origen.getNombre(),
+                destino.getNombre(),
+                pesoMinimo[v]
+            ));
+        }
+
+        return aristas;
+    }
+
+    private int verticeConPesoMinimo(int numVertices, int[] pesoMinimo, boolean[] incluidoEnMST) {
+        int min = Integer.MAX_VALUE;
+        int indiceMin = -1;
+
+        for (int v = 0; v < numVertices; v++) {
+            if (!incluidoEnMST[v] && pesoMinimo[v] < min) {
+                min = pesoMinimo[v];
+                indiceMin = v;
+            }
+        }
+
+        return indiceMin;
     }
 }
