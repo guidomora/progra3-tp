@@ -30,7 +30,8 @@ public class AlgoritmosController {
             return ResponseEntity.badRequest().body(null);
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.internalServerError().body(null);
-        }
+            return ResponseEntity.internalServerError().body(null);} 
+
     }
+    System.out.println('..');
 }
