@@ -33,5 +33,4 @@ public class AlgoritmosController {
             return ResponseEntity.internalServerError().body(null);} 
 
     }
-    System.out.println('..');
 }
