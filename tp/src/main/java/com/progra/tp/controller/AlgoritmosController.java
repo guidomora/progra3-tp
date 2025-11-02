@@ -21,6 +21,9 @@ public class AlgoritmosController {
     @Autowired
     private IRutaService rutaService;
 
+    @Autowired
+    private IAsignacionService asignacionService;
+
     @GetMapping("/mst/prim/{ciudadInicialId}")
     public ResponseEntity<MSTResponseDTO> getMSTPrim(@PathVariable Long ciudadInicialId) {
         try {
@@ -32,5 +35,19 @@ public class AlgoritmosController {
             e.printStackTrace();
             return ResponseEntity.internalServerError().body(null);} 
 
+    }
+
+        @PostMapping("/misiones/greedy")
+    public ResponseEntity<AsignacionGreedyResponseDTO> asignarMisionesGreedy(
+            @RequestBody AsignacionGreedyRequestDTO request) {
+        try {
+            AsignacionGreedyResponseDTO respuesta = asignacionService.asignarMisionesGreedy(request);
+            return ResponseEntity.ok(respuesta);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(null);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(null);
+        }
     }
 }
