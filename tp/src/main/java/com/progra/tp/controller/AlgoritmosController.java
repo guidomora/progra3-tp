@@ -4,10 +4,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.progra.tp.model.dtos.AsignacionGreedyRequestDTO;
+import com.progra.tp.model.dtos.AsignacionGreedyResponseDTO;
 import com.progra.tp.model.dtos.MSTResponseDTO;
+import com.progra.tp.service.interfaces.IAsignacionService;
 import com.progra.tp.service.interfaces.IRutaService;
 
 
@@ -21,6 +26,9 @@ public class AlgoritmosController {
     @Autowired
     private IRutaService rutaService;
 
+    @Autowired
+    private IAsignacionService asignacionService;
+
     @GetMapping("/mst/prim/{ciudadInicialId}")
     public ResponseEntity<MSTResponseDTO> getMSTPrim(@PathVariable Long ciudadInicialId) {
         try {
@@ -32,5 +40,19 @@ public class AlgoritmosController {
             e.printStackTrace();
             return ResponseEntity.internalServerError().body(null);} 
 
+    }
+
+    @PostMapping("/misiones/greedy")
+    public ResponseEntity<AsignacionGreedyResponseDTO> asignarMisionesGreedy(
+            @RequestBody AsignacionGreedyRequestDTO request) {
+        try {
+            AsignacionGreedyResponseDTO respuesta = asignacionService.asignarMisionesGreedy(request);
+            return ResponseEntity.ok(respuesta);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(null);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(null);
+        }
     }
 }

@@ -24,6 +24,8 @@ public class Tarea {
     @Relationship(type="DESTINO_EN")
     private Ciudad destino;
 
+    public Tarea() {}
+
     public Tarea (String descripcion, TareaEnum tipoTarea, double recompensa, Ciudad destino){
         this.descripcion=descripcion;
         this.tipoTarea=tipoTarea;
