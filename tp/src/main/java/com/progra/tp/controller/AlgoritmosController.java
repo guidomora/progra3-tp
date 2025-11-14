@@ -9,11 +9,15 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.progra.tp.model.dtos.AgenteAsignacionDTO;
 import com.progra.tp.model.dtos.AsignacionGreedyRequestDTO;
 import com.progra.tp.model.dtos.AsignacionGreedyResponseDTO;
 import com.progra.tp.model.dtos.MSTResponseDTO;
+import com.progra.tp.model.dtos.TareaRequestDTO;
 import com.progra.tp.service.interfaces.IAsignacionService;
 import com.progra.tp.service.interfaces.IRutaService;
+import com.progra.tp.service.interfaces.ITareaService;
+
 
 
 
@@ -28,6 +32,9 @@ public class AlgoritmosController {
 
     @Autowired
     private IAsignacionService asignacionService;
+
+    @Autowired
+    private ITareaService tareaService;
 
     @GetMapping("/mst/prim/{ciudadInicialId}")
     public ResponseEntity<MSTResponseDTO> getMSTPrim(@PathVariable Long ciudadInicialId) {
@@ -55,4 +62,16 @@ public class AlgoritmosController {
             return ResponseEntity.internalServerError().body(null);
         }
     }
+
+    @PostMapping("/greedy/{agenteId}")
+    public ResponseEntity<AgenteAsignacionDTO> getTareasGreedy(@PathVariable Long agenteId, @RequestBody TareaRequestDTO tareasdto) {
+        try {
+            AgenteAsignacionDTO asignacionDeTareas = tareaService.asignarTareas(agenteId, tareasdto);
+           
+            return ResponseEntity.ok(asignacionDeTareas);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }//Lo que cambia con el de arriba, es que aca solo agregas las tareas optimas locales a UN SOLO agente
+    
 }

@@ -1,13 +1,24 @@
 package com.progra.tp.service;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.stereotype.Service;
 
+import com.progra.tp.model.Agente;
 import com.progra.tp.model.Ciudad;
 import com.progra.tp.model.Tarea;
+import com.progra.tp.model.dtos.AgenteAsignacionDTO;
+import com.progra.tp.model.dtos.RutaOptimaResponseDTO;
+import com.progra.tp.model.dtos.TareaAsignadaDTO;
+import com.progra.tp.model.dtos.TareaRequestDTO;
+import com.progra.tp.repository.AgenteRepository;
 import com.progra.tp.repository.TareaRepository;
 import com.progra.tp.service.interfaces.ICiudadService;
+import com.progra.tp.service.interfaces.IRutaService;
 import com.progra.tp.service.interfaces.ITareaService;
 
 import jakarta.transaction.Transactional;
@@ -17,10 +28,13 @@ public class TareaService implements ITareaService {
 
     private final TareaRepository tareaRepository;
     private final ICiudadService ciudadService;
-
-    public TareaService(TareaRepository tareaRepository, ICiudadService ciudadService) {
+    private final AgenteRepository agenteRepository;
+    private final IRutaService rutaService;
+    public TareaService(TareaRepository tareaRepository, ICiudadService ciudadService, AgenteRepository agenteRepository,IRutaService rutaService) {
         this.tareaRepository = tareaRepository;
         this.ciudadService = ciudadService;
+        this.agenteRepository=agenteRepository;
+        this.rutaService=rutaService;
     }
 
     @Override
@@ -32,6 +46,62 @@ public class TareaService implements ITareaService {
     public Tarea getTareaById(Long id) {
         return tareaRepository.findById(id).orElse(null);
     }
+
+    @Override
+    public AgenteAsignacionDTO asignarTareas(Long agenteId, TareaRequestDTO tareaDTO ){
+        Agente agente = agenteRepository.findById(agenteId)
+                .orElseThrow(() -> new IllegalArgumentException("Agente no encontrado con id: " + agenteId));
+        List<Long> tareasId = tareaDTO.getIdTareas();
+        List<Tarea> tareas=tareaRepository.findAllById(tareasId);
+        if (tareas.isEmpty()) {
+            throw new IllegalArgumentException("Una o mas tareas no existen.");
+        }
+
+        Map<Tarea,Double> distancias=new HashMap<>();
+        for (Tarea t : tareas) {
+            RutaOptimaResponseDTO respuestaRuta = rutaService
+                    .calcularRutaMasCorta(agente.getUbicacionActual().getId(), t.getDestino().getId());
+            double distancia= respuestaRuta.getDistanciaTotal();
+            distancias.put(t, distancia);
+        }
+
+        // ordenar por recompensa/distancia
+        List<Tarea> ordenadas = tareas.stream()
+        .sorted(Comparator.comparingDouble(t -> -t.getRecompensa() / distancias.get(t)))
+        .toList();
+        
+        List<TareaAsignadaDTO> asignadas = new ArrayList<>();
+        List<Tarea> tareasAAsignar = new ArrayList<>();
+
+        double energiaDisponible=agente.getEnergiaDisponible();
+        for (Tarea t : ordenadas) {
+            double costo = distancias.get(t);
+            if (energiaDisponible >= costo) {
+                TareaAsignadaDTO dto = t.toDto(t);
+                dto.setDistanciaRecorrida(costo); 
+                asignadas.add(dto);
+                tareasAAsignar.add(t);
+                energiaDisponible -= costo;
+            }
+        }
+        if (tareasAAsignar.isEmpty()) {
+            throw new IllegalArgumentException("El agente no tiene energia suficiente para ninguna tarea.");
+        }
+
+        agente.getTareasAsignadas().addAll(tareasAAsignar);
+        agente.setEnergiaDisponible(energiaDisponible);
+        agenteRepository.save(agente);
+
+        AgenteAsignacionDTO response = new AgenteAsignacionDTO();
+        response.setAgenteId(agente.getId());
+        response.setTipo(agente.getTipo());
+        response.setCiudadActual(agente.getUbicacionActual().getNombre());
+        response.setEnergiaRestante(energiaDisponible);
+        response.setTareasAsignadas(asignadas);
+
+        return response;
+    } //ESTO SERIA SI quisieras agregarle tareas optimas a un solo agente
+
 
     @Override
     @Transactional
