@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 
 import com.progra.tp.model.Agente;
 import com.progra.tp.model.Ciudad;
+import com.progra.tp.model.dtos.AgenteAsignacionDTO;
 import com.progra.tp.repository.AgenteRepository;
 import com.progra.tp.service.interfaces.IAgenteService;
 import com.progra.tp.service.interfaces.ICiudadService;
@@ -49,5 +50,40 @@ public class AgenteService implements IAgenteService{
         agente.setUbicacionActual(ciudad);
         return agenteRepository.save(agente);
     }
-    
+
+    @Override
+    @Transactional
+    public AgenteAsignacionDTO actualizarAgente(Long id, AgenteAsignacionDTO datosActualizados) {
+        Agente agenteExistente = agenteRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Agente no encontrado con id: " + id));
+
+        if (datosActualizados.getTipo() != null) {
+            agenteExistente.setTipo(datosActualizados.getTipo());
+        }
+        if (datosActualizados.getCiudadActual() != null) {
+            Ciudad ciudad = ciudadService.getCiudadByNombre(datosActualizados.getCiudadActual());
+            if (ciudad == null) {
+                throw new IllegalArgumentException();
+            }
+            agenteExistente.setUbicacionActual(ciudad);
+        }
+        if (datosActualizados.getEnergiaRestante() > 0) {
+            agenteExistente.setEnergiaDisponible(datosActualizados.getEnergiaRestante());
+        }
+
+        agenteExistente = agenteRepository.save(agenteExistente);
+
+        AgenteAsignacionDTO response = new AgenteAsignacionDTO();
+        response.setAgenteId(agenteExistente.getId());
+        response.setTipo(agenteExistente.getTipo());
+        response.setCiudadActual(
+            agenteExistente.getUbicacionActual() != null 
+                ? agenteExistente.getUbicacionActual().getNombre() 
+                : null
+        );
+        response.setEnergiaRestante(agenteExistente.getEnergiaDisponible());
+        response.setTareasAsignadas(datosActualizados.getTareasAsignadas()); 
+
+        return response;
+    }
 }
