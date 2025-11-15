@@ -5,9 +5,12 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import java.util.LinkedList;
 
 import org.springframework.stereotype.Service;
 
@@ -38,10 +41,12 @@ public class RutaService implements IRutaService {
         Ciudad ciudadDestino = ciudadRepository.findById(rutaDTO.getDestinoId())
                 .orElseThrow(() -> new IllegalArgumentException("Ciudad destino no encontrada"));
 
-        // creao relacion sin añadir toda la ciudadDestino a la lista de rutas para evitar recursion
+        // crear relacion sin añadir toda la ciudadDestino a la lista de rutas para evitar recursion
         Ruta ruta = new Ruta();
         ruta.setDestino(ciudadDestino);
         ruta.setDistancia(rutaDTO.getDistancia());
+        // agrego el peaje
+        ruta.setPeaje(rutaDTO.getPeaje()); 
 
         // guarda la relación usando un metodo de la ciudad
         ciudadOrigen.getRutas().add(ruta);
@@ -58,7 +63,7 @@ public class RutaService implements IRutaService {
 
         return ciudad.getRutas().stream()
                 .map(r -> new RutaResponseDTO(r.getId(), r.getDestino().getId(), r.getDestino().getNombre(),
-                        r.getDistancia()))
+                        r.getDistancia(),r.getPeaje())) //añado el get peaje en base a la modificación de rutaDTO
                 .toList();
     }
 
@@ -201,5 +206,69 @@ public class RutaService implements IRutaService {
     }
 
     private record NodoDistancia(Long ciudadId, double distancia) {
+    }
+
+//poda por presupuesto
+//complejidad computacional
+    @Override
+    public List<List<Ciudad>> encontrarRutasPorPresupuesto(Long origenId, Long destinoId, double presupuestoMaximo) {
+        
+        List<List<Ciudad>> caminosEncontrados = new ArrayList<>();
+        Optional<Ciudad> optOrigen = this.ciudadRepository.findByIdWithRutas(origenId);
+        Optional<Ciudad> optDestino = this.ciudadRepository.findById(destinoId);
+    
+        if (optOrigen.isEmpty()) {
+            throw new IllegalArgumentException("Ciudad de origen no encontrada: " + origenId);}
+        if (optDestino.isEmpty()) {
+            throw new IllegalArgumentException("Ciudad de destino no encontrada: " + destinoId);}
+
+        Ciudad origen = optOrigen.get();
+        Ciudad destino = optDestino.get();
+        LinkedList<Ciudad> caminoActual = new LinkedList<>();
+
+        _backtrackPresupuestoRecursive(origen, destino, presupuestoMaximo, 0.0, caminoActual, caminosEncontrados);
+        return caminosEncontrados;
+    }
+
+    private void _backtrackPresupuestoRecursive(
+            Ciudad ciudadActual,
+            Ciudad ciudadDestino,
+            double presupuestoMaximo,
+            double costoAcumulado, 
+            LinkedList<Ciudad> caminoActual,
+            List<List<Ciudad>> caminosEncontrados
+    ) {
+        
+
+        caminoActual.addLast(ciudadActual);
+
+        if (ciudadActual.equals(ciudadDestino)) {
+            caminosEncontrados.add(new ArrayList<>(caminoActual));
+            caminoActual.removeLast();
+            return;
+        }
+
+        for (Ruta ruta : ciudadActual.getRutas()) { 
+
+            Ciudad proximaCiudad = ruta.getDestino();
+            double peajeDelTramo = ruta.getPeaje(); 
+            if (costoAcumulado + peajeDelTramo > presupuestoMaximo) {
+                continue; // Poda: Excede el presupuesto
+            }
+
+            if (caminoActual.contains(proximaCiudad)) {
+                continue;
+            }
+
+            _backtrackPresupuestoRecursive(
+                proximaCiudad, 
+                ciudadDestino, 
+                presupuestoMaximo, 
+                costoAcumulado + peajeDelTramo,
+                caminoActual, 
+                caminosEncontrados
+            );
+        }
+        caminoActual.removeLast();
     }
 }
