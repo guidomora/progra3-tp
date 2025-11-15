@@ -1,6 +1,7 @@
 package com.progra.tp.controller;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.progra.tp.model.Ciudad;
@@ -59,6 +61,27 @@ public class RutaController {
             return ResponseEntity.badRequest().build();
         }
     }
+
+
+    @GetMapping("/economicas/{destinoId}")
+    public ResponseEntity<List<List<CiudadResponseDTO>>> obtenerRutasEconomicas(
+            @PathVariable Long ciudadId,
+            @PathVariable Long destinoId,
+            @RequestParam(defaultValue = "1.0") double presupuesto) { 
+        
+        try {
+            List<List<Ciudad>> rutasEncontradas = rutaService.encontrarRutasPorPresupuesto(ciudadId, destinoId, presupuesto);
+            List<List<CiudadResponseDTO>> rutasDTO = rutasEncontradas.stream()
+                .map(camino -> camino.stream()
+                                    .map(Ciudad::toDTO)
+                                    .collect(Collectors.toList()))
+                .collect(Collectors.toList());
+            return ResponseEntity.ok(rutasDTO);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(null); 
+        }
+    }
+    
 
     @PutMapping("/{rutaIndex}")
     public ResponseEntity<Ciudad> actualizarRuta(@PathVariable Long ciudadId, @PathVariable int rutaIndex,
