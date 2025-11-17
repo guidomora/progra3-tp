@@ -6,7 +6,6 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -67,19 +66,19 @@ public class RutaService implements IRutaService {
     }
 
     @Override
-    public Ciudad actualizarRuta(Long ciudadId, int rutaIndex, Ruta rutaActualizada) {
+    public Ciudad actualizarRuta(Long ciudadId, Long rutaId, Ruta rutaActualizada) {
         Ciudad ciudad = ciudadRepository.findById(ciudadId)
                 .orElseThrow(() -> new IllegalArgumentException("Ciudad no encontrada"));
 
-        if (rutaIndex < 0 || rutaIndex >= ciudad.getRutas().size()) {
-            throw new IllegalArgumentException("Índice de ruta inválido: " + rutaIndex);
+        Ruta rutaExistente = ciudad.getRutas().stream()
+                .filter(r -> r.getId().equals(rutaId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Ruta no encontrada"));
+
+        if (rutaActualizada.getPeaje() != null) {
+            rutaExistente.setPeaje(rutaActualizada.getPeaje());
         }
 
-        Ciudad destinoCompleto = ciudadRepository.findById(rutaActualizada.getDestino().getId())
-                .orElseThrow(() -> new IllegalArgumentException("Ciudad destino no encontrada"));
-
-        rutaActualizada.setDestino(destinoCompleto);
-        ciudad.getRutas().set(rutaIndex, rutaActualizada);
         return ciudadRepository.save(ciudad);
     }
 
@@ -211,18 +210,20 @@ public class RutaService implements IRutaService {
 //complejidad computacional
     @Override
     public List<List<Ciudad>> encontrarRutasPorPresupuesto(Long origenId, Long destinoId, double presupuestoMaximo) {
-        
-        List<List<Ciudad>> caminosEncontrados = new ArrayList<>();
-        Optional<Ciudad> optOrigen = this.ciudadRepository.findByIdWithRutas(origenId);
-        Optional<Ciudad> optDestino = this.ciudadRepository.findById(destinoId);
-    
-        if (optOrigen.isEmpty()) {
-            throw new IllegalArgumentException("Ciudad de origen no encontrada: " + origenId);}
-        if (optDestino.isEmpty()) {
-            throw new IllegalArgumentException("Ciudad de destino no encontrada: " + destinoId);}
 
-        Ciudad origen = optOrigen.get();
-        Ciudad destino = optDestino.get();
+        List<Ciudad> subgrafo = ciudadRepository.cargarSubgrafo(origenId);
+
+        Ciudad origen = subgrafo.stream()
+            .filter(c -> c.getId().equals(origenId))
+            .findFirst()
+            .orElseThrow(() -> new IllegalArgumentException("Origen no encontrado."));
+
+        Ciudad destino = subgrafo.stream()
+            .filter(c -> c.getId().equals(destinoId))
+            .findFirst()
+            .orElseThrow(() -> new IllegalArgumentException("Destino no alcanzable desde el origen."));
+
+        List<List<Ciudad>> caminosEncontrados = new ArrayList<>();
         LinkedList<Ciudad> caminoActual = new LinkedList<>();
 
         _backtrackPresupuestoRecursive(origen, destino, presupuestoMaximo, 0.0, caminoActual, caminosEncontrados);
@@ -241,7 +242,7 @@ public class RutaService implements IRutaService {
 
         caminoActual.addLast(ciudadActual);
 
-        if (ciudadActual.equals(ciudadDestino)) {
+        if (ciudadActual.getId().equals(ciudadDestino.getId())) {
             caminosEncontrados.add(new ArrayList<>(caminoActual));
             caminoActual.removeLast();
             return;

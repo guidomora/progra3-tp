@@ -11,7 +11,7 @@ public interface IRutaService {
 
     CiudadResponseDTO agregarRuta(Long ciudadId, RutaDTO ruta);
     List<RutaResponseDTO> obtenerRutasDeCiudad(Long ciudadId);
-    Ciudad actualizarRuta(Long ciudadId, int rutaIndex, Ruta rutaActualizada);
+    Ciudad actualizarRuta(Long ciudadId, Long rutaIndex, Ruta rutaActualizada);
     Ciudad eliminarRutaPorId(Long ciudadId, Long rutaIndex);
     RutaOptimaResponseDTO calcularRutaMasCorta(Long ciudadOrigenId, Long ciudadDestinoId);
     List<List<Ciudad>> encontrarRutasPorPresupuesto(Long origenId, Long destinoId, double presupuestoMaximo);
