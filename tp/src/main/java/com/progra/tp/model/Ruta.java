@@ -22,7 +22,7 @@ public class Ruta {
     @JsonIgnoreProperties({"rutas"})
     private Ciudad destino;
     private double distancia;
-    private double peaje;
+    private Double peaje=0.0;
 
     public Ruta() {}
     public Ruta(Ciudad destino, double distancia, double peaje) {
