@@ -67,7 +67,7 @@ public class RutaController {
     public ResponseEntity<List<List<CiudadResponseDTO>>> obtenerRutasEconomicas(
             @PathVariable Long ciudadId,
             @PathVariable Long destinoId,
-            @RequestParam(defaultValue = "1.0") double presupuesto) { 
+            @RequestParam(name="presupuesto") double presupuesto) { 
         
         try {
             List<List<Ciudad>> rutasEncontradas = rutaService.encontrarRutasPorPresupuesto(ciudadId, destinoId, presupuesto);
@@ -83,11 +83,11 @@ public class RutaController {
     }
     
 
-    @PutMapping("/{rutaIndex}")
-    public ResponseEntity<Ciudad> actualizarRuta(@PathVariable Long ciudadId, @PathVariable int rutaIndex,
+    @PutMapping("/{rutaId}")
+    public ResponseEntity<Ciudad> actualizarRuta(@PathVariable Long ciudadId, @PathVariable Long rutaId,
             @RequestBody Ruta ruta) {
         try {
-            Ciudad ciudad = rutaService.actualizarRuta(ciudadId, rutaIndex, ruta);
+            Ciudad ciudad = rutaService.actualizarRuta(ciudadId, rutaId, ruta);
             return ResponseEntity.ok(ciudad);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
