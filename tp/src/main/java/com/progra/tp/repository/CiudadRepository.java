@@ -10,8 +10,12 @@ import com.progra.tp.model.Ciudad;
 public interface CiudadRepository extends Neo4jRepository<Ciudad, Long> {
     Optional<Ciudad> findByNombre(String nombre);
 
-    @Query("MATCH p=(c:Ciudad)-[r:CONECTADA_CON*0..10]->(v) " + "WHERE id(c) = $origenId " + 
-           "RETURN c")
+    @Query("""
+       MATCH (c:Ciudad)
+       WHERE id(c) = $origenId
+       OPTIONAL MATCH (c)-[r:CONECTADA_CON]->(d:Ciudad)
+       RETURN c, collect(r) AS rutas, collect(d) AS destinos
+       """)
 
     Optional<Ciudad> findByIdWithRutas(Long origenId);
 }
