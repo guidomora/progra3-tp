@@ -9,6 +9,8 @@ import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.Queue;
+import java.util.Collections;
 
 import org.springframework.stereotype.Service;
 
@@ -270,5 +272,97 @@ public class RutaService implements IRutaService {
             );
         }
         caminoActual.removeLast();
+    }
+
+    //BFS para ruta con menos escalas
+    //
+    @Override
+    public RutaOptimaResponseDTO rutaConMenosEscalas(Long origenId, Long destinoId) {
+        // Asumimos que cada carga de un Subgrafo tiene un costo de  V + E del subgrafo.
+        List<Ciudad> grafo = ciudadRepository.cargarSubgrafo(origenId);
+
+        Ciudad origen = null; // 1
+        Ciudad destino = null; // 1
+        
+        for (Ciudad c : grafo) { // V + 1
+            if (c.getId().equals(origenId)) origen = c; // V
+            if (c.getId().equals(destinoId)) destino = c; // V
+        }
+
+        if (origen == null || destino == null) { // 1
+            throw new IllegalArgumentException("Ciudad origen o destino no encontrada en el subgrafo conectado");
+        }
+
+
+        Queue<Ciudad> cola = new LinkedList<>(); // 1
+        Set<Long> visitados = new HashSet<>();   // 1
+        Map<Long, Long> padres = new HashMap<>(); // 1
+
+        cola.offer(origen);            // 1
+        visitados.add(origen.getId()); // 1
+        padres.put(origen.getId(), null); // 1
+
+        boolean encontrado = false; // 1
+        
+        // En el peor caso (grafo conexo), cada vértice entra a la cola una sola vez.
+        while (!cola.isEmpty()) { // V + 1
+            
+            Ciudad actual = cola.poll(); // V (Operación O(1) repetida V veces)
+
+            if (actual.getId().equals(destino.getId())) { // V
+                encontrado = true; // 1
+                break;
+            }
+
+            // Se ejecuta una vez por cada ARISTA (E) en todo el proceso, porque cada nodo se procesa una vez.
+            for (Ruta ruta : actual.getRutas()) { // E (Total acumulado)
+                
+                Ciudad vecino = ruta.getDestino(); // E
+                Long vecinoId = vecino.getId();    // E
+
+                if (!visitados.contains(vecinoId)) { // E (HashSet es O(1))
+                    visitados.add(vecinoId);       // V (Máximo V inserciones)
+                    padres.put(vecinoId, actual.getId()); // V
+                    cola.offer(vecino);            // V
+                }
+            }
+        }
+
+        if (!encontrado) { // 1
+            throw new IllegalArgumentException("No existe ruta entre las ciudades seleccionadas");
+        }
+
+        return reconstruirRutaBFS(padres, grafo, destinoId); // O(V)
+    }
+
+    /*
+     * Complejidad: O(V) en el peor caso (si el camino es una línea recta que recorre todo el grafo).
+     */
+    private RutaOptimaResponseDTO reconstruirRutaBFS(Map<Long, Long> padres, List<Ciudad> grafo, Long destinoId) {
+        List<CiudadRutaDTO> recorrido = new ArrayList<>(); // 1
+        Long actualId = destinoId; // 1
+        
+        while (actualId != null) { // V (Largo del camino)
+            
+            // asumimos búsqueda O(1) para el análisis.
+            Long idBusqueda = actualId; 
+            Ciudad ciudad = grafo.stream()
+                .filter(c -> c.getId().equals(idBusqueda))
+                .findFirst()
+                .orElseThrow(); 
+            
+            recorrido.add(new CiudadRutaDTO(ciudad.getId(), ciudad.getNombre())); // V
+            actualId = padres.get(actualId); // V
+        }
+        
+        Collections.reverse(recorrido); // V
+        
+        double saltos = recorrido.size() - 1; // 1
+        
+        return new RutaOptimaResponseDTO(recorrido, saltos);
+
+        
+    //Costo Total = O(V) + O(V) + O(E) + O(V^2)
+    //termino dominante = O(V^2)
     }
 }
