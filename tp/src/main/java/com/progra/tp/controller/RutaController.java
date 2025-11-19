@@ -103,4 +103,17 @@ public class RutaController {
             return ResponseEntity.badRequest().build();
         }
     }
+
+    @GetMapping("/menosEscalas/{destinoId}")
+    public ResponseEntity<RutaOptimaResponseDTO> obtenerRutaMenosEscalas(
+            @PathVariable Long ciudadId,
+            @PathVariable Long destinoId) {
+        try {
+            RutaOptimaResponseDTO respuesta = rutaService.rutaConMenosEscalas(ciudadId, destinoId);
+            return ResponseEntity.ok(respuesta);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
 }
