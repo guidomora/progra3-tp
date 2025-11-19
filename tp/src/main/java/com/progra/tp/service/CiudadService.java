@@ -1,21 +1,33 @@
 package com.progra.tp.service;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
+import com.progra.tp.model.Agente;
 import com.progra.tp.model.Ciudad;
+import com.progra.tp.model.Ruta;
+import com.progra.tp.model.dtos.AgenteListIdDTO;
+import com.progra.tp.model.dtos.AgentePDDTO;
+import com.progra.tp.model.dtos.AgentesPDDTO;
+import com.progra.tp.model.dtos.CiudadDTO;
+import com.progra.tp.repository.AgenteRepository;
 import com.progra.tp.repository.CiudadRepository;
 import com.progra.tp.service.interfaces.ICiudadService;
+
+import jakarta.transaction.Transactional;
 
 @Service
 public class CiudadService implements ICiudadService {
 
     private final CiudadRepository ciudadRepository;
-
-    public CiudadService(CiudadRepository ciudadRepository) {
+    private final AgenteRepository agenteRepository;
+    public CiudadService(CiudadRepository ciudadRepository,AgenteRepository agenteRepository) {
         this.ciudadRepository = ciudadRepository;
+        this.agenteRepository=agenteRepository;
     }
 
     @Override
@@ -72,7 +84,78 @@ public class CiudadService implements ICiudadService {
         return false;
     }
 
+    @Override
+    @Transactional
+    public AgentesPDDTO tareasSegunDistancia(AgenteListIdDTO agentesIds) { //complejidad O( A . R . E) (cantidadAgentes. cantidadRutas. energiaDisponible)
 
+        AgentesPDDTO respuesta = new AgentesPDDTO();
+
+        for (Long agenteId : agentesIds.getAgentesIds()) {
+
+            Agente agente = agenteRepository.findById(agenteId)
+                    .orElseThrow(() -> new IllegalArgumentException("No existe agente con id " + agenteId));
+
+            double energia = agente.getEnergiaDisponible();
+            Ciudad origen = agente.getUbicacionActual();
+
+            // lista de ciudades candidatas
+            List<Ciudad> candidatas = new ArrayList<>();
+            List<Double> costos = new ArrayList<>();
+
+            if (origen.getRutas() != null) {
+                for (Ruta r : origen.getRutas()) {
+                    Ciudad destino = r.getDestino();
+                    if (destino == null) continue;
+
+                    double costo = r.getDistancia();
+                    if (costo <= energia) {
+                        candidatas.add(destino);
+                        costos.add(costo);
+                    }
+                }
+            }       
+
+            int ciudadesAlcanzables = costos.size(); // cuantas ciudades puede alzancar el agente con su energia
+            double[][] matriz = new double[ciudadesAlcanzables + 1][(int) energia + 1];
+
+            // maximiza cantidad de ciudades
+            for (int i = 1; i <= ciudadesAlcanzables; i++) {
+                double peso = costos.get(i - 1);
+                for (int e = 0; e <= (int) energia; e++) {
+                    matriz[i][e] = matriz[i - 1][e]; // no tomar
+                    if (peso <= e) {
+                        matriz[i][e] = Math.max(matriz[i][e], matriz[i - 1][(int) (e - peso)] + 1);
+                    }
+                }
+            }
+
+            // backtracking para recuperar las ciudades
+            List<CiudadDTO> seleccionadasDTO = new ArrayList<>();
+            double cap = energia;
+            for (int i = ciudadesAlcanzables; i > 0; i--) {
+                double peso = costos.get(i - 1);
+                if (peso <= cap && matriz[i][(int) cap] == matriz[i - 1][(int) (cap - peso)] + 1) {
+                    Ciudad c = candidatas.get(i - 1);
+                    CiudadDTO dto = new CiudadDTO();
+                    dto.setId(c.getId());
+                    dto.setNombre(c.getNombre());
+                    seleccionadasDTO.add(dto);
+                    cap -= peso;
+                }
+            }
+            Collections.reverse(seleccionadasDTO);
+
+            double energiaGastada = energia - cap;
+
+            respuesta.addResultado(new AgentePDDTO(
+                    agente.getId(),
+                    seleccionadasDTO,
+                    energiaGastada
+            ));
+        }
+
+        return respuesta;
+    }
     // Metodos privados
     private String capitalizeWords(String input) {
         if (input == null || input.isEmpty()) return input;

@@ -10,11 +10,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.progra.tp.model.dtos.AgenteAsignacionDTO;
+import com.progra.tp.model.dtos.AgenteListIdDTO;
+import com.progra.tp.model.dtos.AgentesPDDTO;
 import com.progra.tp.model.dtos.AsignacionGreedyRequestDTO;
 import com.progra.tp.model.dtos.AsignacionGreedyResponseDTO;
 import com.progra.tp.model.dtos.MSTResponseDTO;
 import com.progra.tp.model.dtos.TareaRequestDTO;
 import com.progra.tp.service.interfaces.IAsignacionService;
+import com.progra.tp.service.interfaces.ICiudadService;
 import com.progra.tp.service.interfaces.IRutaService;
 import com.progra.tp.service.interfaces.ITareaService;
 
@@ -36,6 +39,8 @@ public class AlgoritmosController {
     @Autowired
     private ITareaService tareaService;
 
+    @Autowired
+    private ICiudadService ciudadService;
     @GetMapping("/mst/prim/{ciudadInicialId}")
     public ResponseEntity<MSTResponseDTO> getMSTPrim(@PathVariable Long ciudadInicialId) {
         try {
@@ -74,4 +79,18 @@ public class AlgoritmosController {
         }
     }//Lo que cambia con el de arriba, es que aca solo agregas las tareas optimas locales a UN SOLO agente
     
+    @PostMapping("/agentes/pd")
+    public ResponseEntity<AgentesPDDTO> tareasSegunDistancia(@RequestBody AgenteListIdDTO agentesIds) {
+        //TODO: process POST request
+        try {
+            AgentesPDDTO agentes=ciudadService.tareasSegunDistancia(agentesIds);
+            return ResponseEntity.ok(agentes);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        
+        }
+        
+    }
+    
+
 }
