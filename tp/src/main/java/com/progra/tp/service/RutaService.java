@@ -208,6 +208,7 @@ public class RutaService implements IRutaService {
     private record NodoDistancia(Long ciudadId, double distancia) {
     }
 
+    
 //poda por presupuesto
 //complejidad computacional
     @Override
@@ -273,6 +274,7 @@ public class RutaService implements IRutaService {
         }
         caminoActual.removeLast();
     }
+
 
     //BFS para ruta con menos escalas
     //
