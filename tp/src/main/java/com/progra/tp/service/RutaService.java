@@ -211,26 +211,26 @@ public class RutaService implements IRutaService {
     
 //poda por presupuesto
 //complejidad computacional
-    @Override
+@Override
     public List<List<Ciudad>> encontrarRutasPorPresupuesto(Long origenId, Long destinoId, double presupuestoMaximo) {
 
-        List<Ciudad> subgrafo = ciudadRepository.cargarSubgrafo(origenId);
+        List<Ciudad> subgrafo = ciudadRepository.cargarSubgrafo(origenId); // V + E (Carga de datos)
 
         Ciudad origen = subgrafo.stream()
-            .filter(c -> c.getId().equals(origenId))
-            .findFirst()
-            .orElseThrow(() -> new IllegalArgumentException("Origen no encontrado."));
+            .filter(c -> c.getId().equals(origenId)) // V
+            .findFirst() // 1
+            .orElseThrow(() -> new IllegalArgumentException("Origen no encontrado.")); // 1
 
         Ciudad destino = subgrafo.stream()
-            .filter(c -> c.getId().equals(destinoId))
-            .findFirst()
-            .orElseThrow(() -> new IllegalArgumentException("Destino no alcanzable desde el origen."));
+            .filter(c -> c.getId().equals(destinoId)) // V
+            .findFirst() // 1
+            .orElseThrow(() -> new IllegalArgumentException("Destino no alcanzable desde el origen.")); // 1
 
-        List<List<Ciudad>> caminosEncontrados = new ArrayList<>();
-        LinkedList<Ciudad> caminoActual = new LinkedList<>();
+        List<List<Ciudad>> caminosEncontrados = new ArrayList<>(); // 1
+        LinkedList<Ciudad> caminoActual = new LinkedList<>(); // 1
 
-        _backtrackPresupuestoRecursive(origen, destino, presupuestoMaximo, 0.0, caminoActual, caminosEncontrados);
-        return caminosEncontrados;
+        _backtrackPresupuestoRecursive(origen, destino, presupuestoMaximo, 0.0, caminoActual, caminosEncontrados); // T(V)
+        return caminosEncontrados; // 1
     }
 
     private void _backtrackPresupuestoRecursive(
@@ -242,28 +242,27 @@ public class RutaService implements IRutaService {
             List<List<Ciudad>> caminosEncontrados
     ) {
         
+        caminoActual.addLast(ciudadActual); // 1
 
-        caminoActual.addLast(ciudadActual);
-
-        if (ciudadActual.getId().equals(ciudadDestino.getId())) {
-            caminosEncontrados.add(new ArrayList<>(caminoActual));
-            caminoActual.removeLast();
-            return;
+        if (ciudadActual.getId().equals(ciudadDestino.getId())) { // 1
+            caminosEncontrados.add(new ArrayList<>(caminoActual)); // V (Copia de la lista)
+            caminoActual.removeLast(); // 1
+            return; // 1
         }
 
-        for (Ruta ruta : ciudadActual.getRutas()) { 
+        for (Ruta ruta : ciudadActual.getRutas()) { // b (Factor de ramificación)
 
-            Ciudad proximaCiudad = ruta.getDestino();
-            double peajeDelTramo = ruta.getPeaje(); 
-            if (costoAcumulado + peajeDelTramo > presupuestoMaximo) {
-                continue; // Poda: Excede el presupuesto
+            Ciudad proximaCiudad = ruta.getDestino(); // 1
+            double peajeDelTramo = ruta.getPeaje(); // 1
+            if (costoAcumulado + peajeDelTramo > presupuestoMaximo) { // 1
+                continue; //Poda: Excede el presupuesto  1
             }
 
-            if (caminoActual.contains(proximaCiudad)) {
-                continue;
+            if (caminoActual.contains(proximaCiudad)) { // V (Búsqueda lineal en LinkedList)
+                continue; // 1
             }
 
-            _backtrackPresupuestoRecursive(
+            _backtrackPresupuestoRecursive( // T(V-1)
                 proximaCiudad, 
                 ciudadDestino, 
                 presupuestoMaximo, 
@@ -272,12 +271,14 @@ public class RutaService implements IRutaService {
                 caminosEncontrados
             );
         }
-        caminoActual.removeLast();
-    }
+        caminoActual.removeLast(); // 1
+
+     // costo Total = O(V + E) + O(V^2) + O(b^d)
+     // termino dominante = O(b^d)
+    } 
 
 
     //BFS para ruta con menos escalas
-    //
     @Override
     public RutaOptimaResponseDTO rutaConMenosEscalas(Long origenId, Long destinoId) {
         // Asumimos que cada carga de un Subgrafo tiene un costo de  V + E del subgrafo.
