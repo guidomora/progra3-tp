@@ -292,7 +292,7 @@ public class RutaService implements IRutaService {
         }
 
         if (origen == null || destino == null) { // 1
-            throw new IllegalArgumentException("Ciudad origen o destino no encontrada en el subgrafo conectado");
+            throw new IllegalArgumentException("Ciudad origen o destino no encontrada en el grafo conectado");
         }
 
 
