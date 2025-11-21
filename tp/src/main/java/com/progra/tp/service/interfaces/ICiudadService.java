@@ -18,5 +18,5 @@ public interface ICiudadService {
 
     Ciudad actualizarCiudad(Long id, Ciudad ciudadDetails);
     boolean eliminarCiudad(Long id);
-public AgentesPDDTO tareasSegunDistancia(AgenteListIdDTO agentesIds);
+    AgentesPDDTO cantidadCiudadesVisitadas(AgenteListIdDTO agentesIds);
 }
