@@ -4,11 +4,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.Queue;
+import java.util.Collections;
 
 import org.springframework.stereotype.Service;
 
@@ -41,10 +44,12 @@ public class RutaService implements IRutaService {
         Ciudad ciudadDestino = ciudadRepository.findById(rutaDTO.getDestinoId())
                 .orElseThrow(() -> new IllegalArgumentException("Ciudad destino no encontrada"));
 
-        // creao relacion sin añadir toda la ciudadDestino a la lista de rutas para evitar recursion
+        // crear relacion sin añadir toda la ciudadDestino a la lista de rutas para evitar recursion
         Ruta ruta = new Ruta();
         ruta.setDestino(ciudadDestino);
         ruta.setDistancia(rutaDTO.getDistancia());
+        // agrego el peaje
+        ruta.setPeaje(rutaDTO.getPeaje()); 
 
         // guarda la relación usando un metodo de la ciudad
         ciudadOrigen.getRutas().add(ruta);
@@ -61,24 +66,24 @@ public class RutaService implements IRutaService {
 
         return ciudad.getRutas().stream()
                 .map(r -> new RutaResponseDTO(r.getId(), r.getDestino().getId(), r.getDestino().getNombre(),
-                        r.getDistancia()))
+                        r.getDistancia(),r.getPeaje())) //añado el get peaje en base a la modificación de rutaDTO
                 .toList();
     }
 
     @Override
-    public Ciudad actualizarRuta(Long ciudadId, int rutaIndex, Ruta rutaActualizada) {
+    public Ciudad actualizarRuta(Long ciudadId, Long rutaId, Ruta rutaActualizada) {
         Ciudad ciudad = ciudadRepository.findById(ciudadId)
                 .orElseThrow(() -> new IllegalArgumentException("Ciudad no encontrada"));
 
-        if (rutaIndex < 0 || rutaIndex >= ciudad.getRutas().size()) {
-            throw new IllegalArgumentException("Índice de ruta inválido: " + rutaIndex);
+        Ruta rutaExistente = ciudad.getRutas().stream()
+                .filter(r -> r.getId().equals(rutaId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Ruta no encontrada"));
+
+        if (rutaActualizada.getPeaje() != null) {
+            rutaExistente.setPeaje(rutaActualizada.getPeaje());
         }
 
-        Ciudad destinoCompleto = ciudadRepository.findById(rutaActualizada.getDestino().getId())
-                .orElseThrow(() -> new IllegalArgumentException("Ciudad destino no encontrada"));
-
-        rutaActualizada.setDestino(destinoCompleto);
-        ciudad.getRutas().set(rutaIndex, rutaActualizada);
         return ciudadRepository.save(ciudad);
     }
 
@@ -204,6 +209,235 @@ public class RutaService implements IRutaService {
     }
 
     private record NodoDistancia(Long ciudadId, double distancia) {
+    }
+
+    
+//poda por presupuesto
+//complejidad computacional
+@Override
+    public List<List<Ciudad>> encontrarRutasPorPresupuesto(Long origenId, Long destinoId, double presupuestoMaximo) {
+
+        List<Ciudad> subgrafo = ciudadRepository.cargarSubgrafo(origenId); // V + E (Carga de datos)
+
+        Ciudad origen = subgrafo.stream()
+            .filter(c -> c.getId().equals(origenId)) // V
+            .findFirst() // 1
+            .orElseThrow(() -> new IllegalArgumentException("Origen no encontrado.")); // 1
+
+        Ciudad destino = subgrafo.stream()
+            .filter(c -> c.getId().equals(destinoId)) // V
+            .findFirst() // 1
+            .orElseThrow(() -> new IllegalArgumentException("Destino no alcanzable desde el origen.")); // 1
+
+        List<List<Ciudad>> caminosEncontrados = new ArrayList<>(); // 1
+        LinkedList<Ciudad> caminoActual = new LinkedList<>(); // 1
+
+        _backtrackPresupuestoRecursive(origen, destino, presupuestoMaximo, 0.0, caminoActual, caminosEncontrados); // T(V)
+        return caminosEncontrados; // 1
+    }
+
+    @Override
+    public List<List<Ciudad>> encontrarRutasPorEscalas(Long origenId, Long destinoId, int maxEscalas) {
+
+        if (maxEscalas < 0) {
+            throw new IllegalArgumentException("El número máximo de escalas debe ser un valor no negativo");
+        }
+
+        List<Ciudad> subgrafo = ciudadRepository.cargarSubgrafo(origenId);
+
+        Ciudad origen = subgrafo.stream()
+            .filter(c -> c.getId().equals(origenId))
+            .findFirst()
+            .orElseThrow(() -> new IllegalArgumentException("Origen no encontrado."));
+
+        Ciudad destino = subgrafo.stream()
+            .filter(c -> c.getId().equals(destinoId))
+            .findFirst()
+            .orElseThrow(() -> new IllegalArgumentException("Destino no alcanzable desde el origen."));
+
+        List<List<Ciudad>> caminosEncontrados = new ArrayList<>();
+        LinkedList<Ciudad> caminoActual = new LinkedList<>();
+
+        _backtrackMaxEscalas(origen, destino, maxEscalas, caminoActual, caminosEncontrados);
+        return caminosEncontrados;
+    }
+
+    private void _backtrackPresupuestoRecursive(
+            Ciudad ciudadActual,
+            Ciudad ciudadDestino,
+            double presupuestoMaximo,
+            double costoAcumulado, 
+            LinkedList<Ciudad> caminoActual,
+            List<List<Ciudad>> caminosEncontrados
+    ) {
+        
+        caminoActual.addLast(ciudadActual); // 1
+
+        if (ciudadActual.getId().equals(ciudadDestino.getId())) { // 1
+            caminosEncontrados.add(new ArrayList<>(caminoActual)); // V (Copia de la lista)
+            caminoActual.removeLast(); // 1
+            return; // 1
+        }
+
+        for (Ruta ruta : ciudadActual.getRutas()) { // b (Factor de ramificación)
+
+            Ciudad proximaCiudad = ruta.getDestino(); // 1
+            double peajeDelTramo = ruta.getPeaje(); // 1
+            if (costoAcumulado + peajeDelTramo > presupuestoMaximo) { // 1
+                continue; //Poda: Excede el presupuesto  1
+            }
+
+            if (caminoActual.contains(proximaCiudad)) { // V (Búsqueda lineal en LinkedList)
+                continue; // 1
+            }
+
+            _backtrackPresupuestoRecursive( // T(V-1)
+                proximaCiudad, 
+                ciudadDestino, 
+                presupuestoMaximo, 
+                costoAcumulado + peajeDelTramo,
+                caminoActual, 
+                caminosEncontrados
+            );
+        }
+        caminoActual.removeLast(); // 1
+
+     // costo Total = O(V + E) + O(V^2) + O(b^d)
+     // termino dominante = O(b^d)
+    } 
+
+    private void _backtrackMaxEscalas(
+        Ciudad ciudadActual,
+        Ciudad ciudadDestino,
+        int maxEscalas,
+        LinkedList<Ciudad> caminoActual,
+        List<List<Ciudad>> caminosEncontrados
+    ) {
+
+        caminoActual.addLast(ciudadActual);
+
+        int escalasActuales = caminoActual.size() - 1;
+        if (escalasActuales > maxEscalas) {
+            caminoActual.removeLast();
+            return;
+        }
+
+        if (ciudadActual.getId().equals(ciudadDestino.getId())) {
+            caminosEncontrados.add(new ArrayList<>(caminoActual));
+            caminoActual.removeLast();
+            return;
+        }
+
+        if (ciudadActual.getRutas() != null) {
+            for (Ruta ruta : ciudadActual.getRutas()) {
+                Ciudad proximaCiudad = ruta.getDestino();
+
+                if (caminoActual.contains(proximaCiudad)) {
+                    continue;
+                }
+
+                _backtrackMaxEscalas(
+                    proximaCiudad,
+                    ciudadDestino,
+                    maxEscalas,
+                    caminoActual,
+                    caminosEncontrados
+                );
+            }
+        }
+
+        caminoActual.removeLast();
+    }
+
+    //BFS para ruta con menos escalas
+    @Override
+    public RutaOptimaResponseDTO rutaConMenosEscalas(Long origenId, Long destinoId) {
+        // Asumimos que cada carga de un Subgrafo tiene un costo de  V + E del subgrafo.
+        List<Ciudad> grafo = ciudadRepository.cargarSubgrafo(origenId);
+
+        Ciudad origen = null; // 1
+        Ciudad destino = null; // 1
+        
+        for (Ciudad c : grafo) { // V + 1
+            if (c.getId().equals(origenId)) origen = c; // V
+            if (c.getId().equals(destinoId)) destino = c; // V
+        }
+
+        if (origen == null || destino == null) { // 1
+            throw new IllegalArgumentException("Ciudad origen o destino no encontrada en el grafo conectado");
+        }
+
+
+        Queue<Ciudad> cola = new LinkedList<>(); // 1
+        Set<Long> visitados = new HashSet<>();   // 1
+        Map<Long, Long> padres = new HashMap<>(); // 1
+
+        cola.offer(origen);            // 1
+        visitados.add(origen.getId()); // 1
+        padres.put(origen.getId(), null); // 1
+
+        boolean encontrado = false; // 1
+        
+        // En el peor caso (grafo conexo), cada vértice entra a la cola una sola vez.
+        while (!cola.isEmpty()) { // V + 1
+            
+            Ciudad actual = cola.poll(); // V (Operación O(1) repetida V veces)
+
+            if (actual.getId().equals(destino.getId())) { // V
+                encontrado = true; // 1
+                break;
+            }
+
+            // Se ejecuta una vez por cada ARISTA (E) en todo el proceso, porque cada nodo se procesa una vez.
+            for (Ruta ruta : actual.getRutas()) { // E (Total acumulado)
+                
+                Ciudad vecino = ruta.getDestino(); // E
+                Long vecinoId = vecino.getId();    // E
+
+                if (!visitados.contains(vecinoId)) { // E (HashSet es O(1))
+                    visitados.add(vecinoId);       // V (Máximo V inserciones)
+                    padres.put(vecinoId, actual.getId()); // V
+                    cola.offer(vecino);            // V
+                }
+            }
+        }
+
+        if (!encontrado) { // 1
+            throw new IllegalArgumentException("No existe ruta entre las ciudades seleccionadas");
+        }
+
+        return reconstruirRutaBFS(padres, grafo, destinoId); // O(V)
+    }
+
+    /*
+     * Complejidad: O(V) en el peor caso (si el camino es una línea recta que recorre todo el grafo).
+     */
+    private RutaOptimaResponseDTO reconstruirRutaBFS(Map<Long, Long> padres, List<Ciudad> grafo, Long destinoId) {
+        List<CiudadRutaDTO> recorrido = new ArrayList<>(); // 1
+        Long actualId = destinoId; // 1
+        
+        while (actualId != null) { // V (Largo del camino)
+            
+            // asumimos búsqueda O(1) para el análisis.
+            Long idBusqueda = actualId; 
+            Ciudad ciudad = grafo.stream()
+                .filter(c -> c.getId().equals(idBusqueda))
+                .findFirst()
+                .orElseThrow(); 
+            
+            recorrido.add(new CiudadRutaDTO(ciudad.getId(), ciudad.getNombre())); // V
+            actualId = padres.get(actualId); // V
+        }
+        
+        Collections.reverse(recorrido); // V
+        
+        double saltos = recorrido.size() - 1; // 1
+        
+        return new RutaOptimaResponseDTO(recorrido, saltos);
+
+        
+    //Costo Total = O(V) + O(V) + O(E) + O(V^2)
+    //termino dominante = O(V^2)
     }
 
     @Override

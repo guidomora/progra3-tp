@@ -21,13 +21,15 @@ public class Ruta {
     @TargetNode
     @JsonIgnoreProperties({"rutas"})
     private Ciudad destino;
-
     private double distancia;
+    private Double peaje=0.0;
 
     public Ruta() {}
-    public Ruta(Ciudad destino, double distancia) {
+    public Ruta(Ciudad destino, double distancia, double peaje) {
         this.destino = destino;
         this.distancia = distancia;
+        this.peaje = peaje;
+
     }
 
     @Override
@@ -48,7 +50,8 @@ public class Ruta {
             id,
             destino != null ? destino.getId() : null,
             destino != null ? destino.getNombre() : null,
-            distancia
+            distancia, 
+            peaje
         );
     }
 }

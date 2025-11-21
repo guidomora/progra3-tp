@@ -1,6 +1,7 @@
 package com.progra.tp.controller;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.progra.tp.model.Ciudad;
@@ -60,11 +62,50 @@ public class RutaController {
         }
     }
 
-    @PutMapping("/{rutaIndex}")
-    public ResponseEntity<Ciudad> actualizarRuta(@PathVariable Long ciudadId, @PathVariable int rutaIndex,
+
+    @GetMapping("/economicas/{destinoId}")
+    public ResponseEntity<List<List<CiudadResponseDTO>>> obtenerRutasEconomicas(
+            @PathVariable Long ciudadId,
+            @PathVariable Long destinoId,
+            @RequestParam(name="presupuesto") double presupuesto) { 
+        
+        try {
+            List<List<Ciudad>> rutasEncontradas = rutaService.encontrarRutasPorPresupuesto(ciudadId, destinoId, presupuesto);
+            List<List<CiudadResponseDTO>> rutasDTO = rutasEncontradas.stream()
+                .map(camino -> camino.stream()
+                                    .map(Ciudad::toDTO)
+                                    .collect(Collectors.toList()))
+                .collect(Collectors.toList());
+            return ResponseEntity.ok(rutasDTO);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(null); 
+        }
+    }
+    
+    @GetMapping("/porEscalas/{destinoId}")
+    public ResponseEntity<List<List<CiudadResponseDTO>>> obtenerRutasPorEscalas(
+            @PathVariable Long ciudadId,
+            @PathVariable Long destinoId,
+            @RequestParam(name="maxEscalas") int maxEscalas) {
+
+        try {
+            List<List<Ciudad>> rutasEncontradas = rutaService.encontrarRutasPorEscalas(ciudadId, destinoId, maxEscalas);
+            List<List<CiudadResponseDTO>> rutasDTO = rutasEncontradas.stream()
+                .map(camino -> camino.stream()
+                                    .map(Ciudad::toDTO)
+                                    .collect(Collectors.toList()))
+                .collect(Collectors.toList());
+            return ResponseEntity.ok(rutasDTO);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(null);
+        }
+    }
+
+    @PutMapping("/{rutaId}")
+    public ResponseEntity<Ciudad> actualizarRuta(@PathVariable Long ciudadId, @PathVariable Long rutaId,
             @RequestBody Ruta ruta) {
         try {
-            Ciudad ciudad = rutaService.actualizarRuta(ciudadId, rutaIndex, ruta);
+            Ciudad ciudad = rutaService.actualizarRuta(ciudadId, rutaId, ruta);
             return ResponseEntity.ok(ciudad);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
@@ -80,4 +121,17 @@ public class RutaController {
             return ResponseEntity.badRequest().build();
         }
     }
+
+    @GetMapping("/menosEscalas/{destinoId}")
+    public ResponseEntity<RutaOptimaResponseDTO> obtenerRutaMenosEscalas(
+            @PathVariable Long ciudadId,
+            @PathVariable Long destinoId) {
+        try {
+            RutaOptimaResponseDTO respuesta = rutaService.rutaConMenosEscalas(ciudadId, destinoId);
+            return ResponseEntity.ok(respuesta);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
 }
