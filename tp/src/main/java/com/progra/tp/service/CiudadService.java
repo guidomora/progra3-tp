@@ -86,7 +86,7 @@ public class CiudadService implements ICiudadService {
 
     @Override
     @Transactional
-    public AgentesPDDTO tareasSegunDistancia(AgenteListIdDTO agentesIds) { //complejidad O( A . R . E) (cantidadAgentes. cantidadRutas. energiaDisponible)
+    public AgentesPDDTO cantidadCiudadesVisitadas(AgenteListIdDTO agentesIds) { //complejidad O( A . R . E) (cantidadAgentes. cantidadRutas. energiaDisponible)
 
         AgentesPDDTO respuesta = new AgentesPDDTO();
 
@@ -113,21 +113,49 @@ public class CiudadService implements ICiudadService {
                         costos.add(costo);
                     }
                 }
-            }       
+            }    //verifica cuales rutas puede alcanzar segun su energia   
 
             int ciudadesAlcanzables = costos.size(); // cuantas ciudades puede alzancar el agente con su energia
             double[][] matriz = new double[ciudadesAlcanzables + 1][(int) energia + 1];
 
             // maximiza cantidad de ciudades
             for (int i = 1; i <= ciudadesAlcanzables; i++) {
-                double peso = costos.get(i - 1);
-                for (int e = 0; e <= (int) energia; e++) {
-                    matriz[i][e] = matriz[i - 1][e]; // no tomar
-                    if (peso <= e) {
-                        matriz[i][e] = Math.max(matriz[i][e], matriz[i - 1][(int) (e - peso)] + 1);
+                double energiaParaLlegar = costos.get(i - 1);
+                for (int energiaDisponible = 0; energiaDisponible <= (int) energia; energiaDisponible++) {
+                    matriz[i][energiaDisponible] = matriz[i - 1][energiaDisponible]; // no tomar
+                    if (energiaParaLlegar <= energiaDisponible) {
+                        matriz[i][energiaDisponible] = Math.max(matriz[i][energiaDisponible], matriz[i - 1][(int) (energiaDisponible - energiaParaLlegar)] + 1);
                     }
                 }
             }
+            System.out.println("========== TABLA DE PROGRAMACIÓN DINÁMICA ==========");
+
+            // Encabezado de energías
+            System.out.print(String.format("%-20s", "Ciudad/Energía"));
+            for (int e = 0; e <= (int) energia; e++) {
+                System.out.print(String.format("%4d", e));
+            }
+            System.out.println();
+
+            // Filas de ciudades
+            for (int i = 0; i <= ciudadesAlcanzables; i++) {
+
+                if (i == 0) {
+                    System.out.print(String.format("%-20s", "[Sin ciudades]"));
+                } else {
+                    Ciudad c = candidatas.get(i - 1);
+                    String nombre = c.getNombre() + " (" + (int) costos.get(i - 1).doubleValue() + ")";
+                    System.out.print(String.format("%-20s", nombre));
+                }
+
+                for (int e = 0; e <= (int) energia; e++) {
+                    System.out.print(String.format("%4.0f", matriz[i][e]));
+                }
+
+                System.out.println();
+            }
+
+            System.out.println("====================================================");
 
             // backtracking para recuperar las ciudades
             List<CiudadDTO> seleccionadasDTO = new ArrayList<>();
