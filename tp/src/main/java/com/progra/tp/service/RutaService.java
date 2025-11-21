@@ -350,25 +350,25 @@ public class RutaService implements IRutaService {
         caminoActual.removeLast();
     }
 
-    //BFS para ruta con menos escalas
+// --- ALGORITMO: BFS ---
     @Override
     public RutaOptimaResponseDTO rutaConMenosEscalas(Long origenId, Long destinoId) {
-        // Asumimos que cada carga de un Subgrafo tiene un costo de  V + E del subgrafo.
-        List<Ciudad> grafo = ciudadRepository.cargarSubgrafo(origenId);
+        // Preparación: Carga del Grafo
+        List<Ciudad> listaCiudades = ciudadRepository.cargarSubgrafo(origenId); // O(V + E)
 
-        Ciudad origen = null; // 1
-        Ciudad destino = null; // 1
-        
-        for (Ciudad c : grafo) { // V + 1
-            if (c.getId().equals(origenId)) origen = c; // V
-            if (c.getId().equals(destinoId)) destino = c; // V
+        Map<Long, Ciudad> mapaCiudades = new HashMap<>(); // 1
+        for (Ciudad c : listaCiudades) { // V
+            mapaCiudades.put(c.getId(), c); // 1
         }
+
+        Ciudad origen = mapaCiudades.get(origenId); // 1
+        Ciudad destino = mapaCiudades.get(destinoId); // 1
 
         if (origen == null || destino == null) { // 1
-            throw new IllegalArgumentException("Ciudad origen o destino no encontrada en el grafo conectado");
+            throw new IllegalArgumentException("Nodos no encontrados en el subgrafo");
         }
 
-
+        // Estructuras BFS
         Queue<Ciudad> cola = new LinkedList<>(); // 1
         Set<Long> visitados = new HashSet<>();   // 1
         Map<Long, Long> padres = new HashMap<>(); // 1
@@ -376,69 +376,60 @@ public class RutaService implements IRutaService {
         cola.offer(origen);            // 1
         visitados.add(origen.getId()); // 1
         padres.put(origen.getId(), null); // 1
-
-        boolean encontrado = false; // 1
+        boolean encontrado = false;    // 1
         
-        // En el peor caso (grafo conexo), cada vértice entra a la cola una sola vez.
-        while (!cola.isEmpty()) { // V + 1
+        // Bucle Principal (BFS) - O(V + E)
+        while (!cola.isEmpty()) { // V
             
-            Ciudad actual = cola.poll(); // V (Operación O(1) repetida V veces)
+            Ciudad actual = cola.poll(); // 1
 
-            if (actual.getId().equals(destino.getId())) { // V
+            if (actual.getId().equals(destino.getId())) { // 1
                 encontrado = true; // 1
-                break;
+                break; 
             }
 
-            // Se ejecuta una vez por cada ARISTA (E) en todo el proceso, porque cada nodo se procesa una vez.
-            for (Ruta ruta : actual.getRutas()) { // E (Total acumulado)
-                
-                Ciudad vecino = ruta.getDestino(); // E
-                Long vecinoId = vecino.getId();    // E
+            // Exploración de Vecinos
+            for (Ruta ruta : actual.getRutas()) { // E
+                Ciudad vecino = ruta.getDestino(); // 1
+                Long vecinoId = vecino.getId();    // 1
 
-                if (!visitados.contains(vecinoId)) { // E (HashSet es O(1))
-                    visitados.add(vecinoId);       // V (Máximo V inserciones)
-                    padres.put(vecinoId, actual.getId()); // V
-                    cola.offer(vecino);            // V
+                if (!visitados.contains(vecinoId)) { // 1
+                    visitados.add(vecinoId);       // 1
+                    padres.put(vecinoId, actual.getId()); // 1
+                    cola.offer(vecino);            // 1
                 }
             }
         }
 
-        if (!encontrado) { // 1
-            throw new IllegalArgumentException("No existe ruta entre las ciudades seleccionadas");
-        }
-
-        return reconstruirRutaBFS(padres, grafo, destinoId); // O(V)
+        if (!encontrado) throw new IllegalArgumentException("No hay camino"); // 1
+        
+        // Pasamos el mapaCiudades en lugar de la lista
+        return reconstruirRutaBFS(padres, mapaCiudades, destinoId); 
     }
 
-    /*
-     * Complejidad: O(V) en el peor caso (si el camino es una línea recta que recorre todo el grafo).
-     */
-    private RutaOptimaResponseDTO reconstruirRutaBFS(Map<Long, Long> padres, List<Ciudad> grafo, Long destinoId) {
+    private RutaOptimaResponseDTO reconstruirRutaBFS(Map<Long, Long> padres, Map<Long, Ciudad> mapaCiudades, Long destinoId) {
         List<CiudadRutaDTO> recorrido = new ArrayList<>(); // 1
         Long actualId = destinoId; // 1
         
+        // Retrocedemos desde el destino hasta el origen
         while (actualId != null) { // V (Largo del camino)
             
-            // asumimos búsqueda O(1) para el análisis.
-            Long idBusqueda = actualId; 
-            Ciudad ciudad = grafo.stream()
-                .filter(c -> c.getId().equals(idBusqueda))
-                .findFirst()
-                .orElseThrow(); 
+            // Búsqueda en Mapa es O(1)
+            Ciudad ciudad = mapaCiudades.get(actualId); // 1
             
-            recorrido.add(new CiudadRutaDTO(ciudad.getId(), ciudad.getNombre())); // V
-            actualId = padres.get(actualId); // V
+            if (ciudad == null) throw new IllegalStateException("Error de integridad en el grafo"); // 1
+
+            recorrido.add(new CiudadRutaDTO(ciudad.getId(), ciudad.getNombre())); // 1
+            actualId = padres.get(actualId); // 1
         }
         
         Collections.reverse(recorrido); // V
-        
         double saltos = recorrido.size() - 1; // 1
         
         return new RutaOptimaResponseDTO(recorrido, saltos);
 
-        
-    //Costo Total = O(V) + O(V) + O(E) + O(V^2)
-    //termino dominante = O(V^2)
+        //TOTAL: O(V + E) + O(V) + O(V + E) + O(V)
+        //termino dominante: O(V + E)
     }
 
     // Prim (implementación cuadrática): O(V^2) sobre listas de adyacencia
