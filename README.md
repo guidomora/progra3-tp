@@ -51,4 +51,4 @@ spring.neo4j.authentication.password=${NEO4J_PASSWORD}
 
 El backend quedará disponible en:
 
-http://localhost:8080/api
+http://localhost:7474/browser/

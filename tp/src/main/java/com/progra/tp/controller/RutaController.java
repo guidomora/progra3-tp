@@ -49,7 +49,7 @@ public class RutaController {
         }
     }
 
-    @GetMapping("/optima/{destinoId}")
+    @GetMapping("/optima/{destinoId}") //IMPLEMENTACION DIJKSTRA
     public ResponseEntity<RutaOptimaResponseDTO> obtenerRutaMasCorta(@PathVariable Long ciudadId,
             @PathVariable Long destinoId) {
         try {
