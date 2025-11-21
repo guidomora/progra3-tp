@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 import com.progra.tp.model.Agente;
 import com.progra.tp.model.Ciudad;
 import com.progra.tp.model.Ruta;
-import com.progra.tp.model.dtos.AgenteListIdDTO;
+import com.progra.tp.model.dtos.AgenteListIdRequestDTO;
 import com.progra.tp.model.dtos.AgentePDDTO;
 import com.progra.tp.model.dtos.AgentesPDDTO;
 import com.progra.tp.model.dtos.CiudadDTO;
@@ -86,7 +86,7 @@ public class CiudadService implements ICiudadService {
 
     @Override
     @Transactional
-    public AgentesPDDTO cantidadCiudadesVisitadas(AgenteListIdDTO agentesIds) { //complejidad O( A . R . E) (cantidadAgentes. cantidadRutas. energiaDisponible)
+    public AgentesPDDTO cantidadCiudadesVisitadas(AgenteListIdRequestDTO agentesIds) { //complejidad O( A . R . E) (cantidadAgentes. cantidadRutas. energiaDisponible)
 
         AgentesPDDTO respuesta = new AgentesPDDTO();
 

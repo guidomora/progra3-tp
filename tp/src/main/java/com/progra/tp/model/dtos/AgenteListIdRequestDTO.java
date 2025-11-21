@@ -8,6 +8,6 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class AgenteListIdDTO {
+public class AgenteListIdRequestDTO {
     private List<Long> agentesIds;
 }

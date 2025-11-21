@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.progra.tp.model.dtos.AgenteAsignacionDTO;
-import com.progra.tp.model.dtos.AgenteListIdDTO;
+import com.progra.tp.model.dtos.AgenteListIdRequestDTO;
 import com.progra.tp.model.dtos.AgentesPDDTO;
 import com.progra.tp.model.dtos.AsignacionGreedyRequestDTO;
 import com.progra.tp.model.dtos.AsignacionGreedyResponseDTO;
@@ -80,7 +80,7 @@ public class AlgoritmosController {
     }//Lo que cambia con el de arriba, es que aca solo agregas las tareas optimas locales a UN SOLO agente
     
     @PostMapping("/agentes/pd")
-    public ResponseEntity<AgentesPDDTO> tareasSegunDistancia(@RequestBody AgenteListIdDTO agentesIds) {
+    public ResponseEntity<AgentesPDDTO> tareasSegunDistancia(@RequestBody AgenteListIdRequestDTO agentesIds) {
         //TODO: process POST request
         try {
             AgentesPDDTO agentes=ciudadService.cantidadCiudadesVisitadas(agentesIds);
