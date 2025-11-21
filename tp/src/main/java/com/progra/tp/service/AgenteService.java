@@ -126,7 +126,7 @@ public class AgenteService implements IAgenteService{
         );
     }
 
-    private Agente agenteMasCercanoDAC(List<Agente> agentes, Long ciudadDestinoId, int inicio, int fin) {
+    private Agente agenteMasCercanoDAC(List<Agente> agentes, Long ciudadDestinoId, int inicio, int fin) {//a=2 b=2 k= depende de dijkstra, por lo tanto: O(log.n.(V+E)logV)
 
         if (inicio == fin) {
             return agentes.get(inicio);
