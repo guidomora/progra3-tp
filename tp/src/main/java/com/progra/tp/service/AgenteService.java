@@ -7,20 +7,27 @@ import org.springframework.stereotype.Service;
 import com.progra.tp.model.Agente;
 import com.progra.tp.model.Ciudad;
 import com.progra.tp.model.dtos.AgenteAsignacionDTO;
+import com.progra.tp.model.dtos.AgenteAsignadoResponseDTO;
+import com.progra.tp.model.dtos.AgenteListIdRequestDTO;
 import com.progra.tp.repository.AgenteRepository;
+import com.progra.tp.repository.CiudadRepository;
 import com.progra.tp.service.interfaces.IAgenteService;
 import com.progra.tp.service.interfaces.ICiudadService;
+import com.progra.tp.service.interfaces.IRutaService;
 
 import jakarta.transaction.Transactional;
 
 @Service
 public class AgenteService implements IAgenteService{
     private final AgenteRepository agenteRepository;
+    private final CiudadRepository ciudadRepository;
     private final ICiudadService ciudadService; // inyectamos la interfaz, no el service concreto
-
-    public AgenteService(AgenteRepository agenteRepository, ICiudadService ciudadService) {
+    private final IRutaService rutaService;
+    public AgenteService(AgenteRepository agenteRepository, ICiudadService ciudadService,IRutaService rutaService,CiudadRepository ciudadRepository) {
         this.agenteRepository = agenteRepository;
         this.ciudadService = ciudadService;
+        this.rutaService=rutaService;
+        this.ciudadRepository=ciudadRepository;
     }
     public List<Agente> getAllAgentes(){
         return agenteRepository.findAll();
@@ -85,5 +92,62 @@ public class AgenteService implements IAgenteService{
         response.setTareasAsignadas(datosActualizados.getTareasAsignadas()); 
 
         return response;
+    }
+
+    @Override
+    @Transactional
+    public AgenteAsignadoResponseDTO agenteMasCercano(Long ciudadDestinoId,AgenteListIdRequestDTO agentesRequest) {
+
+        List<Long> ids = agentesRequest.getAgentesIds();
+
+        List<Agente> agentes = agenteRepository.findAllById(ids);
+        if (agentes.isEmpty()) {
+            throw new IllegalArgumentException("No se encontraron agentes con esos IDs");
+        } 
+
+        Agente elegido = agenteMasCercanoDAC(agentes, ciudadDestinoId, 0, agentes.size() - 1);
+
+        double distancia = rutaService
+                .calcularRutaMasCorta(
+                        elegido.getUbicacionActual().getId(),
+                        ciudadDestinoId)
+                .getDistanciaTotal();
+
+        Ciudad destino = ciudadRepository.findById(ciudadDestinoId)
+                .orElseThrow(() -> new IllegalArgumentException("Ciudad destino no existe"));
+
+        return new AgenteAsignadoResponseDTO(
+                elegido.getId(),
+                elegido.getTipo(),
+                elegido.getUbicacionActual().getNombre(),
+                destino.getNombre(),
+                distancia
+        );
+    }
+
+    private Agente agenteMasCercanoDAC(List<Agente> agentes, Long ciudadDestinoId, int inicio, int fin) {
+
+        if (inicio == fin) {
+            return agentes.get(inicio);
+        }
+
+        int medio = (inicio + fin) / 2;
+
+        Agente izq = agenteMasCercanoDAC(agentes, ciudadDestinoId, inicio, medio);
+        Agente der = agenteMasCercanoDAC(agentes, ciudadDestinoId, medio + 1, fin);
+
+        double distIzq = rutaService.calcularRutaMasCorta(
+                izq.getUbicacionActual().getId(), ciudadDestinoId
+        ).getDistanciaTotal();
+
+        double distDer = rutaService.calcularRutaMasCorta(
+                der.getUbicacionActual().getId(), ciudadDestinoId
+        ).getDistanciaTotal();
+
+        if (distIzq <= distDer) {
+            return izq;
+        } else {
+            return der;
+        }
     }
 }
