@@ -213,7 +213,7 @@ public class RutaService implements IRutaService {
 
     
 //poda por presupuesto
-//complejidad computacional
+// 
 @Override
     public List<List<Ciudad>> encontrarRutasPorPresupuesto(Long origenId, Long destinoId, double presupuestoMaximo) {
 
@@ -229,7 +229,7 @@ public class RutaService implements IRutaService {
             .findFirst() // 1
             .orElseThrow(() -> new IllegalArgumentException("Destino no alcanzable desde el origen.")); // 1
 
-        List<List<Ciudad>> caminosEncontrados = new ArrayList<>(); // 1
+        List<List<Ciudad>> caminosEncontrados = new ArrayList<>(); // 1   array de listas para guardar los caminos encontrados
         LinkedList<Ciudad> caminoActual = new LinkedList<>(); // 1
 
         _backtrackPresupuestoRecursive(origen, destino, presupuestoMaximo, 0.0, caminoActual, caminosEncontrados); // T(V)
@@ -263,7 +263,7 @@ public class RutaService implements IRutaService {
         return caminosEncontrados;
     }
 
-    private void _backtrackPresupuestoRecursive(
+    private void _backtrackPresupuestoRecursive( // d
             Ciudad ciudadActual,
             Ciudad ciudadDestino,
             double presupuestoMaximo,
@@ -284,6 +284,8 @@ public class RutaService implements IRutaService {
 
             Ciudad proximaCiudad = ruta.getDestino(); // 1
             double peajeDelTramo = ruta.getPeaje(); // 1
+
+            // Calculamos si el costo excede el presupuesto, de ser asi, saltamos esa iteración y ya no se busca por ese camino porque carece de sentido
             if (costoAcumulado + peajeDelTramo > presupuestoMaximo) { // 1
                 continue; //Poda: Excede el presupuesto  1
             }
@@ -292,7 +294,7 @@ public class RutaService implements IRutaService {
                 continue; // 1
             }
 
-            _backtrackPresupuestoRecursive( // T(V-1)
+            _backtrackPresupuestoRecursive( // T(V-1) - b
                 proximaCiudad, 
                 ciudadDestino, 
                 presupuestoMaximo, 
@@ -351,10 +353,14 @@ public class RutaService implements IRutaService {
     }
 
 // --- ALGORITMO: BFS ---
+// se agrego un hash map para que la busqueda de ciudades sea O(1) en vez de O(n) y no recorra nodo x nodo
+// V = nodos
+// E = aristas
     @Override
     public RutaOptimaResponseDTO rutaConMenosEscalas(Long origenId, Long destinoId) {
         // Preparación: Carga del Grafo
-        List<Ciudad> listaCiudades = ciudadRepository.cargarSubgrafo(origenId); // O(V + E)
+        List<Ciudad> listaCiudades = ciudadRepository.cargarSubgrafo(origenId); // O(V + E)  Ciudades y sus conexiones
+        // punto de mejora: si se cargan demasiados grafos podria causar un outOfMemoryError
 
         Map<Long, Ciudad> mapaCiudades = new HashMap<>(); // 1
         for (Ciudad c : listaCiudades) { // V
@@ -369,9 +375,10 @@ public class RutaService implements IRutaService {
         }
 
         // Estructuras BFS
-        Queue<Ciudad> cola = new LinkedList<>(); // 1
-        Set<Long> visitados = new HashSet<>();   // 1
-        Map<Long, Long> padres = new HashMap<>(); // 1
+        // la lista tiene coste en memoria
+        Queue<Ciudad> cola = new LinkedList<>(); // 1 fifo para garantizar que los nodos se exploren en el orden correcto
+        Set<Long> visitados = new HashSet<>();   // 1 si un nodo ya esta en el set se ignora
+        Map<Long, Long> padres = new HashMap<>(); // 1 se enlaza el nodo padre con el hijo para luego reconstruir la ruta repitiendo recursivamente hasta llegar al origen
 
         cola.offer(origen);            // 1
         visitados.add(origen.getId()); // 1
@@ -389,11 +396,11 @@ public class RutaService implements IRutaService {
             }
 
             // Exploración de Vecinos
-            for (Ruta ruta : actual.getRutas()) { // E
+            for (Ruta ruta : actual.getRutas()) { // E - si no es el destino iteramos todas sus rutas conectadas.
                 Ciudad vecino = ruta.getDestino(); // 1
                 Long vecinoId = vecino.getId();    // 1
 
-                if (!visitados.contains(vecinoId)) { // 1
+                if (!visitados.contains(vecinoId)) { // 1 si un nodo ya esta en el set se ignora
                     visitados.add(vecinoId);       // 1
                     padres.put(vecinoId, actual.getId()); // 1
                     cola.offer(vecino);            // 1
@@ -411,7 +418,7 @@ public class RutaService implements IRutaService {
         List<CiudadRutaDTO> recorrido = new ArrayList<>(); // 1
         Long actualId = destinoId; // 1
         
-        // Retrocedemos desde el destino hasta el origen
+        // Retrocedemos desde el destino hasta el origen usando el mapa de padres
         while (actualId != null) { // V (Largo del camino)
             
             // Búsqueda en Mapa es O(1)
