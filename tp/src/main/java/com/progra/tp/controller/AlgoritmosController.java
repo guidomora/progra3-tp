@@ -69,7 +69,7 @@ public class AlgoritmosController {
     }
 
     @PostMapping("/greedy/{agenteId}")
-    public ResponseEntity<AgenteAsignacionDTO> getTareasGreedy(@PathVariable Long agenteId, @RequestBody TareaRequestDTO tareasdto) {
+    public ResponseEntity<AgenteAsignacionDTO> asignarMisionesIndividualesGreedy(@PathVariable Long agenteId, @RequestBody TareaRequestDTO tareasdto) {
         try {
             AgenteAsignacionDTO asignacionDeTareas = tareaService.asignarTareas(agenteId, tareasdto);
            
@@ -83,7 +83,7 @@ public class AlgoritmosController {
     public ResponseEntity<AgentesPDDTO> tareasSegunDistancia(@RequestBody AgenteListIdDTO agentesIds) {
         //TODO: process POST request
         try {
-            AgentesPDDTO agentes=ciudadService.tareasSegunDistancia(agentesIds);
+            AgentesPDDTO agentes=ciudadService.cantidadCiudadesVisitadas(agentesIds);
             return ResponseEntity.ok(agentes);
         } catch (Exception e) {
             return ResponseEntity.badRequest().build();
