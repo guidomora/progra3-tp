@@ -1,0 +1,14 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Spring Boot-TpApplication<tp>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.progra.tp.TpApplication",
+            "projectName": "tp",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}
