@@ -335,8 +335,8 @@ public class RutaService implements IRutaService {
             for (Ruta ruta : ciudadActual.getRutas()) {
                 Ciudad proximaCiudad = ruta.getDestino();
 
-                if (caminoActual.contains(proximaCiudad)) {
-                    continue;
+                if (caminoActual.contains(proximaCiudad)) { //operacion lineal O(N de la lista) podra mejorarse con un hash set
+                    continue; // continue si ya esta en el camino actual
                 }
 
                 _backtrackMaxEscalas(
