@@ -82,6 +82,24 @@ public class RutaController {
         }
     }
     
+    @GetMapping("/porEscalas/{destinoId}")
+    public ResponseEntity<List<List<CiudadResponseDTO>>> obtenerRutasPorEscalas(
+            @PathVariable Long ciudadId,
+            @PathVariable Long destinoId,
+            @RequestParam(name="maxEscalas") int maxEscalas) {
+
+        try {
+            List<List<Ciudad>> rutasEncontradas = rutaService.encontrarRutasPorEscalas(ciudadId, destinoId, maxEscalas);
+            List<List<CiudadResponseDTO>> rutasDTO = rutasEncontradas.stream()
+                .map(camino -> camino.stream()
+                                    .map(Ciudad::toDTO)
+                                    .collect(Collectors.toList()))
+                .collect(Collectors.toList());
+            return ResponseEntity.ok(rutasDTO);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(null);
+        }
+    }
 
     @PutMapping("/{rutaId}")
     public ResponseEntity<Ciudad> actualizarRuta(@PathVariable Long ciudadId, @PathVariable Long rutaId,

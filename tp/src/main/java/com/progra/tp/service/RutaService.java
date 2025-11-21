@@ -233,6 +233,32 @@ public class RutaService implements IRutaService {
         return caminosEncontrados; // 1
     }
 
+    @Override
+    public List<List<Ciudad>> encontrarRutasPorEscalas(Long origenId, Long destinoId, int maxEscalas) {
+
+        if (maxEscalas < 0) {
+            throw new IllegalArgumentException("El número máximo de escalas debe ser un valor no negativo");
+        }
+
+        List<Ciudad> subgrafo = ciudadRepository.cargarSubgrafo(origenId);
+
+        Ciudad origen = subgrafo.stream()
+            .filter(c -> c.getId().equals(origenId))
+            .findFirst()
+            .orElseThrow(() -> new IllegalArgumentException("Origen no encontrado."));
+
+        Ciudad destino = subgrafo.stream()
+            .filter(c -> c.getId().equals(destinoId))
+            .findFirst()
+            .orElseThrow(() -> new IllegalArgumentException("Destino no alcanzable desde el origen."));
+
+        List<List<Ciudad>> caminosEncontrados = new ArrayList<>();
+        LinkedList<Ciudad> caminoActual = new LinkedList<>();
+
+        _backtrackMaxEscalas(origen, destino, maxEscalas, caminoActual, caminosEncontrados);
+        return caminosEncontrados;
+    }
+
     private void _backtrackPresupuestoRecursive(
             Ciudad ciudadActual,
             Ciudad ciudadDestino,
@@ -277,6 +303,48 @@ public class RutaService implements IRutaService {
      // termino dominante = O(b^d)
     } 
 
+    private void _backtrackMaxEscalas(
+        Ciudad ciudadActual,
+        Ciudad ciudadDestino,
+        int maxEscalas,
+        LinkedList<Ciudad> caminoActual,
+        List<List<Ciudad>> caminosEncontrados
+    ) {
+
+        caminoActual.addLast(ciudadActual);
+
+        int escalasActuales = caminoActual.size() - 1;
+        if (escalasActuales > maxEscalas) {
+            caminoActual.removeLast();
+            return;
+        }
+
+        if (ciudadActual.getId().equals(ciudadDestino.getId())) {
+            caminosEncontrados.add(new ArrayList<>(caminoActual));
+            caminoActual.removeLast();
+            return;
+        }
+
+        if (ciudadActual.getRutas() != null) {
+            for (Ruta ruta : ciudadActual.getRutas()) {
+                Ciudad proximaCiudad = ruta.getDestino();
+
+                if (caminoActual.contains(proximaCiudad)) {
+                    continue;
+                }
+
+                _backtrackMaxEscalas(
+                    proximaCiudad,
+                    ciudadDestino,
+                    maxEscalas,
+                    caminoActual,
+                    caminosEncontrados
+                );
+            }
+        }
+
+        caminoActual.removeLast();
+    }
 
     //BFS para ruta con menos escalas
     @Override

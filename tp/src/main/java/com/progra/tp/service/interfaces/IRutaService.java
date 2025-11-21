@@ -16,4 +16,5 @@ public interface IRutaService {
     RutaOptimaResponseDTO calcularRutaMasCorta(Long ciudadOrigenId, Long ciudadDestinoId);
     List<List<Ciudad>> encontrarRutasPorPresupuesto(Long origenId, Long destinoId, double presupuestoMaximo); // Nuevo metodo para rutas por presupuesto
     RutaOptimaResponseDTO rutaConMenosEscalas(Long ciudadOrigenId, Long ciudadDestinoId); // Nuevo metodo para la ruta con menos escalas
+    List<List<Ciudad>> encontrarRutasPorEscalas(Long origenId, Long destinoId, int maxEscalas); // Nuevo metodo para rutas por numero de escalas
 }
