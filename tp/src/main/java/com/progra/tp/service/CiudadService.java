@@ -84,6 +84,7 @@ public class CiudadService implements ICiudadService {
         return false;
     }
 
+    // Programación dinámica estilo mochila para maximizar ciudades alcanzables por energía
     @Override
     @Transactional
     public AgentesPDDTO cantidadCiudadesVisitadas(AgenteListIdRequestDTO agentesIds) { //complejidad O( A . R . E) (cantidadAgentes. cantidadRutas. energiaDisponible)

@@ -43,6 +43,7 @@ public class AsignacionService implements IAsignacionService {
         this.rutaService = rutaService;
     }
 
+    // Greedy global de asignación: O(T * A * (E log V)) evaluando cada tarea contra cada agente con Dijkstra
     @Override
     @Transactional
     public AsignacionGreedyResponseDTO asignarMisionesGreedy(AsignacionGreedyRequestDTO request) {

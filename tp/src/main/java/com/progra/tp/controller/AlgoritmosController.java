@@ -24,7 +24,7 @@ import com.progra.tp.service.interfaces.ITareaService;
 
 
 
-
+// greedy, Prim
 @RestController
 @RequestMapping("api/rutas/algoritmos")
 
@@ -39,6 +39,7 @@ public class AlgoritmosController {
     @Autowired
     private ITareaService tareaService;
 
+    // MST (Prim): árbol generador mínimo desde una ciudad inicial
     @Autowired
     private ICiudadService ciudadService;
     @GetMapping("/mst/prim/{ciudadInicialId}")
@@ -54,6 +55,7 @@ public class AlgoritmosController {
 
     }
 
+    // Greedy global de asignación de misiones a múltiples agentes
     @PostMapping("/misiones/greedy")
     public ResponseEntity<AsignacionGreedyResponseDTO> asignarMisionesGreedy(
             @RequestBody AsignacionGreedyRequestDTO request) {
@@ -79,6 +81,7 @@ public class AlgoritmosController {
         }
     }//Lo que cambia con el de arriba, es que aca solo agregas las tareas optimas locales a UN SOLO agente
     
+     // Programación dinámica estilo mochila para maximizar ciudades visitadas
     @PostMapping("/agentes/pd")
     public ResponseEntity<AgentesPDDTO> tareasSegunDistancia(@RequestBody AgenteListIdRequestDTO agentesIds) {
         //TODO: process POST request

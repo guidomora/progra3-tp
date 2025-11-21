@@ -51,6 +51,7 @@ public class AgenteController {
         }
     }
 
+    // Dijkstra para elegir agente más cercano
     @PostMapping("/mas-cercano/{ciudadDestinoId}")
     public ResponseEntity<AgenteAsignadoResponseDTO> obtenerAgenteMasCercano(
             @PathVariable Long ciudadDestinoId, @RequestBody AgenteListIdRequestDTO agentes) {

@@ -47,6 +47,7 @@ public class TareaService implements ITareaService {
         return tareaRepository.findById(id).orElse(null);
     }
 
+    // Greedy local por recompensa/distancia: O(M * (E log V) + M log M) sobre M tareas
     @Override
     public AgenteAsignacionDTO asignarTareas(Long agenteId, TareaRequestDTO tareaDTO ){
         Agente agente = agenteRepository.findById(agenteId)

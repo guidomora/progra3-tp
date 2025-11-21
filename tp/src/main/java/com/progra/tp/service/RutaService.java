@@ -100,7 +100,7 @@ public class RutaService implements IRutaService {
         return ciudadRepository.save(ciudad);
     }
 
-    
+    // Dijkstra: O((V + E) log V) para hallar la ruta mínima entre origen y destino
     @Override
     public RutaOptimaResponseDTO calcularRutaMasCorta(Long ciudadOrigenId, Long ciudadDestinoId) {
         Map<Long, Ciudad> grafo = cargarCiudadesComoMapa();
@@ -236,6 +236,7 @@ public class RutaService implements IRutaService {
         return caminosEncontrados; // 1
     }
 
+    // Backtracking acotado por escalas: O(b^d) limitado por maxEscalas
     @Override
     public List<List<Ciudad>> encontrarRutasPorEscalas(Long origenId, Long destinoId, int maxEscalas) {
 
@@ -440,6 +441,7 @@ public class RutaService implements IRutaService {
     //termino dominante = O(V^2)
     }
 
+    // Prim (implementación cuadrática): O(V^2) sobre listas de adyacencia
     @Override
     public MSTResponseDTO calcularMSTPrim(Long ciudadInicialId) {
         // TODO Auto-generated method stub

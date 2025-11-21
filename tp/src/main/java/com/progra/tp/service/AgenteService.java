@@ -94,6 +94,7 @@ public class AgenteService implements IAgenteService{
         return response;
     }
 
+    // Dijkstra: O(A log A)
     @Override
     @Transactional
     public AgenteAsignadoResponseDTO agenteMasCercano(Long ciudadDestinoId,AgenteListIdRequestDTO agentesRequest) {

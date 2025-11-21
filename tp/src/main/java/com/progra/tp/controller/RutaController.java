@@ -51,6 +51,7 @@ public class RutaController {
         }
     }
 
+    // Dijkstra: ruta mínima por distancia total
     @GetMapping("/optima/{destinoId}") //IMPLEMENTACION DIJKSTRA
     public ResponseEntity<RutaOptimaResponseDTO> obtenerRutaMasCorta(@PathVariable Long ciudadId,
             @PathVariable Long destinoId) {
@@ -63,6 +64,7 @@ public class RutaController {
     }
 
 
+    // Backtracking con poda por presupuesto máximo
     @GetMapping("/economicas/{destinoId}")
     public ResponseEntity<List<List<CiudadResponseDTO>>> obtenerRutasEconomicas(
             @PathVariable Long ciudadId,
@@ -82,6 +84,7 @@ public class RutaController {
         }
     }
     
+    // Backtracking por cantidad de escalas
     @GetMapping("/porEscalas/{destinoId}")
     public ResponseEntity<List<List<CiudadResponseDTO>>> obtenerRutasPorEscalas(
             @PathVariable Long ciudadId,
@@ -122,6 +125,7 @@ public class RutaController {
         }
     }
 
+    // BFS: ruta con menor cantidad de escalas
     @GetMapping("/menosEscalas/{destinoId}")
     public ResponseEntity<RutaOptimaResponseDTO> obtenerRutaMenosEscalas(
             @PathVariable Long ciudadId,
